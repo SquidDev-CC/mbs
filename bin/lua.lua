@@ -217,8 +217,6 @@ while running do
       end
     end
 
-    counter = counter + 1
-
     local force_print = true
     local func, e = load("return " .. line, "=lua", "t", environment)
     if not func then
@@ -233,5 +231,7 @@ while running do
     else
       printError(e)
     end
+
+    counter = counter + 1
   end
 end

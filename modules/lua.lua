@@ -13,7 +13,7 @@ return {
     },
     {
       name = "mbs.lua.history_file",
-      description = "The file to save history to. Set to nil to disable.",
+      description = "The file to save history to. Set to false to disable.",
       default = ".lua_history",
     },
     {
