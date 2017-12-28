@@ -401,12 +401,12 @@ return {
     }
   },
 
-  install = function()
+  enabled = function() return settings.get("mbs.readline.enabled") end,
+
+  setup = function()
     complete_bg = colour_table[settings.get("mbs.readline.complete_bg")] or -1
     complete_fg = colour_table[settings.get("mbs.readline.complete_fg")] or -1
 
-    if settings.get("mbs.readline.enabled") then
-      _G.read = read
-    end
+    _G.read = read
   end,
 }

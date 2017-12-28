@@ -30,15 +30,21 @@ return {
     }
   },
 
-  install = function(path)
-    if settings.get("mbs.shell.enabled") then
-      os.loadAPI(fs.combine(path, "lib/scroll_window.lua"))
+  enabled = function() return settings.get("mbs.shell.enabled") end,
 
-      shell.setAlias("shell", fs.combine(path, "bin/shell.lua"))
-      shell.setAlias("shell.lua", fs.combine(path, "bin/shell.lua"))
+  setup = function(path)
+    os.loadAPI(fs.combine(path, "lib/scroll_window.lua"))
 
-      shell.setAlias("clear", fs.combine(path, "bin/clear.lua"))
-      shell.setAlias("clear.lua", fs.combine(path, "bin/clear.lua"))
-    end
-  end
+    shell.setAlias("shell", fs.combine(path, "bin/shell.lua"))
+    shell.setAlias("shell.lua", fs.combine(path, "bin/shell.lua"))
+    shell.setAlias("sh", fs.combine(path, "bin/shell.lua"))
+
+    shell.setAlias("clear", fs.combine(path, "bin/clear.lua"))
+    shell.setAlias("clear.lua", fs.combine(path, "bin/clear.lua"))
+  end,
+
+  startup = function()
+    shell.run("shell")
+    shell.exit()
+  end,
 }
