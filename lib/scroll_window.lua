@@ -30,9 +30,11 @@ function create(original)
 
   local redirect = {}
 
-  for i = 0, 15 do
-    local c = 2 ^ i
-    palette[c] = { original.getPaletteColour( c ) }
+  if original.getPaletteColour then
+    for i = 0, 15 do
+      local c = 2 ^ i
+      palette[c] = { original.getPaletteColour( c ) }
+    end
   end
 
   local function trim()
@@ -260,39 +262,43 @@ function create(original)
   end
   redirect.getBackgroundColor = redirect.getBackgroundColour
 
-  function redirect.setPaletteColour(colour, r, g, b)
-    if delegate then return delegate.setPaletteColour(colour, r, g, b) end
+  if original.getPaletteColour then
+    function redirect.setPaletteColour(colour, r, g, b)
+      if delegate then return delegate.setPaletteColour(colour, r, g, b) end
 
-    local palcol = palette[colour]
-    if not palcol then error("Invalid colour (got " .. tostring(colour) .. ")", 2) end
-    if type(r) == "number" and g == nil and b == nil then
-        palcol[1], palcol[2], palcol[3] = colours.rgb8(r)
-    else
-        if type(r) ~= "number" then error("bad argument #2 (expected number, got " .. type(r) .. ")", 2) end
-        if type(g) ~= "number" then error("bad argument #3 (expected number, got " .. type(g) .. ")", 2) end
-        if type(b) ~= "number" then error("bad argument #4 (expected number, got " .. type(b ) .. ")", 2 ) end
+      local palcol = palette[colour]
+      if not palcol then error("Invalid colour (got " .. tostring(colour) .. ")", 2) end
+      if type(r) == "number" and g == nil and b == nil then
+          palcol[1], palcol[2], palcol[3] = colours.rgb8(r)
+      else
+          if type(r) ~= "number" then error("bad argument #2 (expected number, got " .. type(r) .. ")", 2) end
+          if type(g) ~= "number" then error("bad argument #3 (expected number, got " .. type(g) .. ")", 2) end
+          if type(b) ~= "number" then error("bad argument #4 (expected number, got " .. type(b ) .. ")", 2 ) end
 
-        palcol[1], palcol[2], palcol[3] = r, g, b
+          palcol[1], palcol[2], palcol[3] = r, g, b
+      end
+
+      if bubble then return original.setPaletteColour(colour, r, g, b) end
     end
+    redirect.setPaletteColor = redirect.setPaletteColour
 
-    if bubble then return original.setPaletteColour(colour, r, g, b) end
+    function redirect.getPaletteColour(colour)
+      if delegate then return delegate.getPaletteColour(colour) end
+
+      local palcol = palette[colour]
+      if not palcol then error("Invalid colour (got " .. tostring(colour) .. ")", 2) end
+      return palcol[1], palcol[2], palcol[3]
+    end
+    redirect.getPaletteColor = redirect.getPaletteColour
   end
-  redirect.setPaletteColor = redirect.setPaletteColour
-
-  function redirect.getPaletteColour(colour)
-    if delegate then return delegate.getPaletteColour(colour) end
-
-    local palcol = palette[colour]
-    if not palcol then error("Invalid colour (got " .. tostring(colour) .. ")", 2) end
-    return palcol[1], palcol[2], palcol[3]
-  end
-  redirect.getPaletteColor = redirect.getPaletteColour
 
   function redirect.draw(offset)
     if delegate then return end
 
-    for colour, pal in pairs( palette ) do
-      original.setPaletteColour( colour, pal[1], pal[2], pal[3] )
+    if original.getPaletteColour then
+      for colour, pal in pairs( palette ) do
+        original.setPaletteColour( colour, pal[1], pal[2], pal[3] )
+      end
     end
 
     local original = original
@@ -338,9 +344,11 @@ function create(original)
       delegate.setTextColour(2 ^ tonumber(cur_text_colour, 16))
       delegate.setBackgroundColor(2 ^ tonumber(cur_back_colour, 16))
 
-      for i = 0, 15 do
-        local palcol = palette[2 ^ i]
-        delegate.setPaletteColour(2 ^ i, palcol[1], palcol[2], palcol[3])
+      if original.getPaletteColour then
+        for i = 0, 15 do
+          local palcol = palette[2 ^ i]
+          delegate.setPaletteColour(2 ^ i, palcol[1], palcol[2], palcol[3])
+        end
       end
     end
 

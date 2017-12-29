@@ -34,6 +34,9 @@ return {
 
   setup = function(path)
     os.loadAPI(fs.combine(path, "lib/scroll_window.lua"))
+    if not _G['scroll_window'] then
+      _G['scroll_window'] = _G['scroll_window.lua']
+    end
 
     shell.setAlias("shell", fs.combine(path, "bin/shell.lua"))
     shell.setAlias("shell.lua", fs.combine(path, "bin/shell.lua"))

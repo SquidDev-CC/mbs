@@ -119,20 +119,29 @@ elseif arg[1] == "install" then
   end
   download_files(deps)
 
-  -- Move the existing startup file if required
-  if fs.exists("startup") and not fs.isDir("startup")then
-    local handle = fs.open("startup", "r")
-    local contents = handle.readAll()
-    handle.close()
-    fs.delete("startup")
+  local handle
 
-    handle = fs.open("startup/00_init.lua", "w")
-    handle.write(contents)
-    handle.close()
+  -- If we're on CC 1.80 then we'll create a startup directory and use that.
+  if fs.exists("rom/startup.lua") then
+    -- Move the existing startup file if required
+    if fs.exists("startup") and not fs.isDir("startup")then
+      local handle = fs.open("startup", "r")
+      local contents = handle.readAll()
+      handle.close()
+      fs.delete("startup")
+
+      handle = fs.open("startup/00_init.lua", "w")
+      handle.write(contents)
+      handle.close()
+    end
+
+    -- We'll write at the last posible position
+    handle = fs.open("startup/99_mbs.lua", "w")
+  else
+    -- Otherwise just append to the startup file
+    handle = fs.open("startup", "a")
   end
 
-  -- And generate our own
-  local handle = fs.open("startup/99_mbs.lua", "w")
   handle.writeLine(("shell.run(%q)"):format(shell.getRunningProgram() .. " startup"))
   handle.close()
 
