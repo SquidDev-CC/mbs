@@ -119,8 +119,6 @@ elseif arg[1] == "install" then
   end
   download_files(deps)
 
-  local handle
-
   -- If we're on CC 1.80 then we'll create a startup directory and use that.
   if fs.exists("rom/startup.lua") then
     -- Move the existing startup file if required
@@ -136,14 +134,30 @@ elseif arg[1] == "install" then
     end
 
     -- We'll write at the last posible position
-    handle = fs.open("startup/99_mbs.lua", "w")
+    local handle = fs.open("startup/99_mbs.lua", "w")
+    handle.writeLine(("shell.run(%q)"):format(shell.getRunningProgram() .. " startup"))
+    handle.close()
   else
     -- Otherwise just append to the startup file
-    handle = fs.open("startup", "a")
-  end
 
-  handle.writeLine(("shell.run(%q)"):format(shell.getRunningProgram() .. " startup"))
-  handle.close()
+    -- A rather ugly hack to determine if we have an uncommented "mbs startup" somewhere
+    -- in the file.
+    -- Note this doesn't handle block comments, but it's good enough.
+    local contains = false
+    local body = ("shell.run(%q)"):format(shell.getRunningProgram() .. " startup")
+    if fs.exists("startup") then
+      local handle = fs.open("startup", "r")
+      contains = ("\n" .. handle.readAll() .. "\n"):find("\n" .. body .. "\n", 1, true)
+      handle.close()
+    end
+
+    -- If we've no existing "mbs startup" then append it to the end.
+    if not contains then
+      local handle = fs.open("startup", "a")
+      handle.writeLine(body)
+      handle.close()
+    end
+  end
 
   print("Please reboot to apply changes.")
 elseif arg[1] == "startup" then
