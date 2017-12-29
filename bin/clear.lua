@@ -1,8 +1,4 @@
-local term = term.current()
+local _, y = term.getCursorPos()
 
-if type(term.setCursorThreshold) == "function" then
-  term.setCursorThreshold(-1)
-end
-
+term.scroll(y - 1)
 term.setCursorPos(1, 1)
-term.clear()
