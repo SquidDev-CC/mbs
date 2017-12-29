@@ -503,7 +503,8 @@ if #tArgs > 0 then
 else
   -- "shell"
   -- Print the header
-  local redirect = scroll_window.create()
+  local parent = term.current()
+  local redirect = scroll_window.create(parent)
 
   term.redirect(redirect)
   term.setCursorPos(1, 1)
@@ -536,7 +537,7 @@ else
             redirect.draw(offset)
           end
 
-          if change ~= 0 then
+          if change ~= 0 and term.current() == redirect and not redirect.isPrivateMode() then
             offset = offset + change
             if offset > 0 then offset = 0 end
             if offset < -redirect.getTotalHeight() then offset = -redirect.getTotalHeight() end
@@ -602,4 +603,6 @@ else
     redirect.endPrivateMode()
     redirect.draw(0)
   end
+
+  term.redirect(parent)
 end
