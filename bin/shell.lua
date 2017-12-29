@@ -557,7 +557,7 @@ else
 
   local history = shell.history()
   while not bExit do
-    local scrollback = tonumber(settings.get("mbs.shell.max_scrollback"))
+    local scrollback = tonumber(settings.get("mbs.shell.scroll_max"))
     if scrollback then redirect.setMaxScrollback(scrollback) end
 
     term.setBackgroundColor(bgColour)
