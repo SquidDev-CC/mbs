@@ -563,6 +563,7 @@ else
 
     term.setBackgroundColor(bgColour)
     term.setTextColour(promptColour)
+    if term.getCursorPos() ~= 1 then print() end
     write(shell.dir() .. "> ")
     term.setTextColour(textColour)
 
