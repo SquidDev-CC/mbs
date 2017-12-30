@@ -1,5 +1,5 @@
 local arg = table.pack(...)
-local root_dir = "mbs"
+local root_dir = ".mbs"
 local repo_url = "https://raw.githubusercontent.com/SquidDev-CC/mbs/master/"
 
 --- Write a string with the given colour to the terminal
