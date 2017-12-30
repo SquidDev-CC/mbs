@@ -116,7 +116,7 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
         oldText = term.getTextColor()
         oldBg = term.getBackgroundColor()
         if complete_fg >= 0 then term.setTextColor(complete_fg) end
-        if complete_bg >= 0 then term.setBackgroundColor(completeg) end
+        if complete_bg >= 0 then term.setBackgroundColor(complete_bg) end
       end
       if sReplace then
         term.write(string.rep(sReplace, #sCompletion))
