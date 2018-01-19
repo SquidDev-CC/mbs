@@ -5,6 +5,7 @@ return {
     "bin/clear.lua",
     "bin/shell.lua",
     "lib/scroll_window.lua",
+    "lib/blit_window.lua",
   },
 
   settings = {
@@ -34,8 +35,10 @@ return {
 
   setup = function(path)
     os.loadAPI(fs.combine(path, "lib/scroll_window.lua"))
+    os.loadAPI(fs.combine(path, "lib/blit_window.lua"))
     if not _G['scroll_window'] then
       _G['scroll_window'] = _G['scroll_window.lua']
+      _G['blit_window'] = _G['blit_window.lua']
     end
 
     shell.setAlias("shell", fs.combine(path, "bin/shell.lua"))

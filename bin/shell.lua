@@ -598,10 +598,10 @@ else
     local _, y = term.getCursorPos()
     redirect.setCursorThreshold(y)
 
-    shell.run(line)
+    local ok = shell.run(line)
 
     term.redirect(redirect)
-    redirect.endPrivateMode()
+    redirect.endPrivateMode(not ok)
     redirect.draw(0)
   end
 

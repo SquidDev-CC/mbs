@@ -93,7 +93,7 @@ function create(original)
 
     local pos = cursor_x
 
-  -- If we're off the screen then just emulate a write
+    -- If we're off the screen then just emulate a write
     if cursor_y > sizeY or cursor_y < 1 then
       cursor_x = pos + #writeText
       return
@@ -150,7 +150,7 @@ function create(original)
   function redirect.clearLine()
     if delegate then return delegate.clearLine() end
 
-    -- If we're off the screen then just emulate a blit
+    -- If we're off the screen then just emulate a clearLine
     if cursor_y > sizeY or cursor_y < 1 then
       return
     end
@@ -323,16 +323,26 @@ function create(original)
     cursor_threshold = y
   end
 
-  function redirect.endPrivateMode()
+  function redirect.endPrivateMode(redraw)
     if delegate then
+      local old_delegate = delegate
       delegate = nil
       redirect.draw(0)
+
+      -- If we should redraw the old buffer then blit it to the canvas
+      if redraw then
+        if cursor_threshold > 0 then
+          redirect.scroll(cursor_threshold)
+        end
+
+        old_delegate.draw(redirect)
+      end
     end
   end
 
   function redirect.beginPrivateMode()
     if not delegate then
-      delegate = window.create(original, 1, 1, sizeX, sizeY, true)
+      delegate = blit_window.create(original)
 
       for y = 1, sizeY do
         delegate.setCursorPos(1, y)
