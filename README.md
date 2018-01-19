@@ -22,6 +22,9 @@ MBS is a series of utilities for improving the default CraftOS experience.
 #### Improved support for fullscreen programs
 ![](img/21-shell-fullscreen.gif "Improved support for fullscreen programs")
 
+#### Even works when a program errors!
+![](img/23-shell-error.gif "A fullscreen program erroring")
+
 #### Scrollback to view output of long commands
 ![](img/22-shell-scroll.gif "Scrollback to view output of long commands")
 
