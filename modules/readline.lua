@@ -15,6 +15,12 @@ for k, v in pairs(colors) do
   if type(v) == "number" then colour_table[k] = v end
 end
 
+local function clamp(value, min, max)
+  if value < min then return min end
+  if value > max then return max end
+  return value
+end
+
 local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
   if _sReplaceChar ~= nil and type(_sReplaceChar) ~= "string" then
     error("bad argument #1 (expected string, got " .. type(_sReplaceChar) .. ")", 2)
@@ -30,19 +36,16 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
   end
   term.setCursorBlink(true)
 
-  local sLine
-  if type(_sDefault) == "string" then
-    sLine = _sDefault
-  else
-    sLine = ""
-  end
+  local w = term.getSize()
+  local sx = term.getCursorPos()
+
+  local sLine = _sDefault or ""
+  local nPos, nScroll = #sLine, 0
+
   local nHistoryPos
-  local nPos = #sLine
   local tDown = {}
   local nMod = 0
-  if _sReplaceChar then
-    _sReplaceChar = string.sub(_sReplaceChar, 1, 1)
-  end
+  if _sReplaceChar then _sReplaceChar = _sReplaceChar:sub(1, 1) end
 
   local tCompletions
   local nCompletion
@@ -91,13 +94,14 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
     return nOffset - 1
   end
 
-  local w = term.getSize()
-  local sx = term.getCursorPos()
-
   local function redraw(_bClear)
-    local nScroll = 0
-    if sx + nPos >= w then
-      nScroll = (sx + nPos) - w
+    local cursor_pos = nPos - nScroll
+    if sx + cursor_pos >= w then
+      -- We've moved beyond the RHS, ensure we're on the edge.
+      nScroll = sx + nPos - w
+    elseif cursor_pos < 0 then
+      -- We've moved beyond the LHS, ensure we're on the edge.
+      nScroll = nPos
     end
 
     local cx,cy = term.getCursorPos()
@@ -155,7 +159,7 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
     end
   end
   while true do
-    local sEvent, param = os.pullEvent()
+    local sEvent, param, param1, param2 = os.pullEvent()
     if nMod == 0 and sEvent == "char" then
       -- Typed key
       clear()
@@ -360,6 +364,18 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
       if param == keys.leftCtrl or param == keys.rightCtrl or param == keys.leftAlt or param == keys.rightAlt then
         tDown[param] = false
         updateModifier()
+      end
+    elseif sEvent == "mouse_click" or sEvent == "mouse_drag" and param == 1 then
+      local cx, cy = term.getCursorPos()
+      if param2 == cy then
+        -- We first clamp the x position with in the start and end points
+        -- to ensure we don't scroll beyond the visible region.
+        local x = clamp(param1, sx, w)
+
+        -- Then ensure we don't scroll beyond the current line
+        nPos = clamp(nScroll + x - sx, 0, #sLine)
+
+        redraw()
       end
     elseif sEvent == "term_resize" then
       -- Terminal resized
