@@ -119,6 +119,45 @@ else
   bgColour = colours.black
 end
 
+local function traceback(x)
+  -- Attempt to detect error() and error("xyz", 0).
+  -- This probably means they're erroring the program intentionally and so we
+  -- shouldn't display anything.
+  if x == nil or (type(x) == "string" and not x:find(":%d+:")) then
+    return x
+  end
+
+  if type(debug) == "table" and type(debug.traceback) == "function" then
+    return debug.traceback(tostring(x), 2)
+  else
+    local level = 3
+    local out = { tostring(x), "stack traceback:" }
+    while true do
+      local _, msg = pcall(error, "", level)
+      if msg == "" then break end
+
+      out[#out + 1] = "  " .. msg
+      level = level + 1
+    end
+
+    return table.concat(out, "\n")
+  end
+end
+
+local function trimTraceback(target, marker)
+  local ttarget, tmarker = {}, {}
+  for line in target:gmatch("([^\n]*)\n?") do ttarget[#ttarget + 1] = line end
+  for line in marker:gmatch("([^\n]*)\n?") do tmarker[#tmarker + 1] = line end
+
+  local t_len, m_len = #ttarget, #tmarker
+  while t_len >= 3 and ttarget[t_len] == tmarker[m_len] do
+    table.remove(ttarget, t_len)
+    t_len, m_len = t_len - 1, m_len - 1
+  end
+
+  return ttarget
+end
+
 local function run(_sCommand, ...)
   local sPath = shell.resolveProgram(_sCommand)
   if sPath ~= nil then
@@ -131,7 +170,42 @@ local function run(_sCommand, ...)
       multishell.setTitle(multishell.getCurrent(), sTitle)
     end
     local sDir = fs.getDir(sPath)
-    local result = os.run(createShellEnv(sDir), sPath, ...)
+    local tEnv = setmetatable(createShellEnv(sDir), { __index = _G })
+
+    local ok
+    local fnFile, err = loadfile(sPath, tEnv)
+    if fnFile then
+      if settings.get("mbs.shell.traceback") then
+        local tArgs = table.pack(...)
+        local trace
+
+        -- The following line is horrible, but we need to capture the current traceback and run
+        -- the function on the same line.
+        ok, err = xpcall(function() return fnFile(table.unpack(tArgs, 1, tArgs.n)) end, traceback) if not ok then trace = traceback("shell.lua:1:") end
+        if not ok and err ~= nil then
+          trace = trimTraceback(err, trace)
+
+          local max, remaining = 15, 10
+          if #trace > max then
+            for i = #trace - max, 0, -1 do table.remove(trace, remaining + i) end
+            table.insert(trace, remaining, "  ...")
+          end
+
+          err = table.concat(trace, "\n")
+        end
+      else
+        ok, err = pcall(fnFile, ...)
+      end
+
+      if not ok then
+        ok = false
+        if err and err ~= "" then printError(err) end
+      end
+    else
+      ok = false
+      if err and err ~= "" then printError(err) end
+    end
+
     tProgramStack[#tProgramStack] = nil
     if multishell then
       if #tProgramStack > 0 then
@@ -144,7 +218,7 @@ local function run(_sCommand, ...)
         multishell.setTitle(multishell.getCurrent(), "shell")
       end
     end
-    return result
+    return ok
   else
     printError("No such program")
     return false

@@ -28,6 +28,9 @@ MBS is a series of utilities for improving the default CraftOS experience.
 #### Scrollback to view output of long commands
 ![](img/22-shell-scroll.gif "Scrollback to view output of long commands")
 
+#### Stack traces
+![](img/24-shell-deep-error.png "A program with a large stack trace erroring")
+
 ## Install
  - `wget https://raw.githubusercontent.com/SquidDev-CC/mbs/master/mbs.lua mbs.lua`
  - `mbs.lua install`

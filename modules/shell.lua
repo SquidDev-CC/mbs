@@ -28,7 +28,12 @@ return {
       name = "mbs.shell.scroll_max",
       description = "The maximum size of the scrollback",
       default = 1e3,
-    }
+    },
+    {
+      name = "mbs.shell.traceback",
+      description = "Show an error traceback when a program errors",
+      default = true,
+    },
   },
 
   enabled = function() return settings.get("mbs.shell.enabled") end,
