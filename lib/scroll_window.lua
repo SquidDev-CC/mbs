@@ -53,6 +53,8 @@ function create(original)
     if delegate then return delegate.write(writeText) end
 
     writeText = tostring(writeText)
+    if bubble then original.write(writeText) end
+
     local pos = cursor_x
 
     -- If we're off the screen then just emulate a write
@@ -67,16 +69,16 @@ function create(original)
       return
     elseif pos < 1 then
       -- Adjust text to fit on screen starting at one.
-      writeText = string.sub(writeText, math.abs(cursor_x) + 2)
-      cursor_x = 1
+      writeText = string.sub(writeText, -pos + 2)
+      pos = 1
     end
 
     local lineText = text[scroll_cursor_y]
     local lineColor = text_colour[scroll_cursor_y]
     local lineBack = back_colour[scroll_cursor_y]
-    local preStop = cursor_x - 1
+    local preStop = pos - 1
     local preStart = math.min(1, preStop)
-    local postStart = cursor_x + string.len(writeText)
+    local postStart = pos + string.len(writeText)
     local postStop = sizeX
     local sub, rep = string.sub, string.rep
 
@@ -84,12 +86,11 @@ function create(original)
     text_colour[scroll_cursor_y] = sub(lineColor, preStart, preStop)..rep(cur_text_colour, #writeText)..sub(lineColor, postStart, postStop)
     back_colour[scroll_cursor_y] = sub(lineBack, preStart, preStop)..rep(cur_back_colour, #writeText)..sub(lineBack, postStart, postStop)
     cursor_x = pos + string.len(writeText)
-
-    if bubble then return original.write(writeText) end
   end
 
   function redirect.blit(writeText, writeFore, writeBack)
     if delegate then return delegate.blit(writeText, writeFore, writeBack) end
+    if bubble then original.blit(writeText, writeFore, writeBack) end
 
     local pos = cursor_x
 
@@ -106,6 +107,8 @@ function create(original)
     elseif pos < 1 then
       --adjust text to fit on screen starting at one.
       writeText = string.sub(writeText, math.abs(cursor_x) + 2)
+      writeFore = string.sub(writeFore, math.abs(cursor_x) + 2)
+      writeBack = string.sub(writeBack, math.abs(cursor_x) + 2)
       cursor_x = 1
     elseif pos > sizeX then
       --if we're off the edge to the right, skip entirely.
@@ -128,8 +131,6 @@ function create(original)
     text_colour[scroll_cursor_y] = sub(lineColor, preStart, preStop)..writeFore..sub(lineColor, postStart, postStop)
     back_colour[scroll_cursor_y] = sub(lineBack, preStart, preStop)..writeBack..sub(lineBack, postStart, postStop)
     cursor_x = pos + string.len(writeText)
-
-    if bubble then original.blit(writeText, writeFore, writeBack) end
   end
 
   function redirect.clear()

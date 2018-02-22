@@ -33,6 +33,8 @@ function create(original)
 
   function redirect.write(writeText)
     writeText = tostring(writeText)
+    if bubble then original.write(writeText) end
+
     local pos = cursor_x
 
     -- If we're off the screen then just emulate a write
@@ -48,15 +50,15 @@ function create(original)
     elseif pos < 1 then
       -- Adjust text to fit on screen starting at one.
       writeText = string.sub(writeText, math.abs(cursor_x) + 2)
-      cursor_x = 1
+      pos = 1
     end
 
     local lineText = text[cursor_y]
     local lineColor = text_colour[cursor_y]
     local lineBack = back_colour[cursor_y]
-    local preStop = cursor_x - 1
+    local preStop = pos - 1
     local preStart = math.min(1, preStop)
-    local postStart = cursor_x + string.len(writeText)
+    local postStart = pos + string.len(writeText)
     local postStop = sizeX
     local sub, rep = string.sub, string.rep
 
@@ -64,11 +66,10 @@ function create(original)
     text_colour[cursor_y] = sub(lineColor, preStart, preStop)..rep(cur_text_colour, #writeText)..sub(lineColor, postStart, postStop)
     back_colour[cursor_y] = sub(lineBack, preStart, preStop)..rep(cur_back_colour, #writeText)..sub(lineBack, postStart, postStop)
     cursor_x = pos + string.len(writeText)
-
-    if bubble then return original.write(writeText) end
   end
 
   function redirect.blit(writeText, writeFore, writeBack)
+    if bubble then original.blit(writeText, writeFore, writeBack) end
     local pos = cursor_x
 
     -- If we're off the screen then just emulate a write
@@ -84,13 +85,13 @@ function create(original)
     elseif pos < 1 then
       --adjust text to fit on screen starting at one.
       writeText = string.sub(writeText, math.abs(cursor_x) + 2)
+      writeFore = string.sub(writeFore, math.abs(cursor_x) + 2)
+      writeBack = string.sub(writeBack, math.abs(cursor_x) + 2)
       cursor_x = 1
     elseif pos > sizeX then
       --if we're off the edge to the right, skip entirely.
       cursor_x = pos + #writeText
       return
-    else
-      writeText = writeText
     end
 
     local lineText = text[cursor_y]
@@ -106,8 +107,6 @@ function create(original)
     text_colour[cursor_y] = sub(lineColor, preStart, preStop)..writeFore..sub(lineColor, postStart, postStop)
     back_colour[cursor_y] = sub(lineBack, preStart, preStop)..writeBack..sub(lineBack, postStart, postStop)
     cursor_x = pos + string.len(writeText)
-
-    if bubble then original.blit(writeText, writeFore, writeBack) end
   end
 
   function redirect.clear()
