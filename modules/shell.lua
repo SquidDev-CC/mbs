@@ -8,6 +8,7 @@ return {
     "lib/blit_window.lua",
   },
 
+  -- When updating the defaults, one should also update bin/shell.lua
   settings = {
     {
       name = "mbs.shell.enabled",

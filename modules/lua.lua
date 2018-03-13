@@ -5,6 +5,7 @@ return {
     "bin/lua.lua",
   },
 
+  -- When updating the defaults, one should also update bin/lua.lua
   settings = {
     {
       name = "mbs.lua.enabled",

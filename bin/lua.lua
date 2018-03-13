@@ -141,7 +141,7 @@ if not settings or settings.get("lua.autocomplete") then
   end
 end
 
-local history_file = settings.get("mbs.lua.history_file")
+local history_file = settings.get("mbs.lua.history_file", ".lua_history")
 if history_file and fs.exists(history_file) then
   local handle = fs.open(history_file, "r")
   if handle then
@@ -203,11 +203,11 @@ while running do
       history[#history + 1] = line
 
       -- Remove extra items from history
-      local max = tonumber(settings.get("mbs.lua.history_max")) or 1e4
+      local max = tonumber(settings.get("mbs.lua.history_max", 1e4)) or 1e4
       while #history > max do table.remove(history, 1) end
 
       -- Write history file
-      local history_file = settings.get("mbs.lua.history_file")
+      local history_file = settings.get("mbs.lua.history_file", ".lua_history")
       if history_file then
         local handle = fs.open(history_file, "w")
         if handle then

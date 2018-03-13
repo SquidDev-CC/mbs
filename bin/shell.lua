@@ -175,7 +175,7 @@ local function run(_sCommand, ...)
     local ok
     local fnFile, err = loadfile(sPath, tEnv)
     if fnFile then
-      if settings.get("mbs.shell.traceback") then
+      if settings.get("mbs.shell.traceback", true) then
         local tArgs = table.pack(...)
         local trace
 
@@ -531,7 +531,7 @@ function shell.history()
   if not history then
     history = {}
 
-    local history_file = settings.get("mbs.shell.history_file")
+    local history_file = settings.get("mbs.shell.history_file", ".shell_history")
     if history_file and fs.exists(history_file) then
       local handle = fs.open(history_file, "r")
       if handle then
@@ -632,7 +632,7 @@ else
 
   local history = shell.history()
   while not bExit do
-    local scrollback = tonumber(settings.get("mbs.shell.scroll_max"))
+    local scrollback = tonumber(settings.get("mbs.shell.scroll_max", 1e3))
     if scrollback then redirect.setMaxScrollback(scrollback) end
 
     term.setBackgroundColor(bgColour)
@@ -655,11 +655,11 @@ else
       history[#history + 1] = line
 
       -- Remove extra items from history
-      local max = tonumber(settings.get("mbs.shell.history_max")) or 1e4
+      local max = tonumber(settings.get("mbs.shell.history_max", 1e4)) or 1e4
       while #history > max do table.remove(history, 1) end
 
       -- Write history file
-      local history_file = settings.get("mbs.shell.history_file")
+      local history_file = settings.get("mbs.shell.history_file", ".shell_history")
       if history_file then
         local handle = fs.open(history_file, "w")
         if handle then
