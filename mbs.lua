@@ -226,7 +226,7 @@ elseif arg[1] == "modules" then
     print()
   end
 
-  if not found_any then error("No modules found. Maybe try running the `install` command?", 0) end
+  if not found_any then error("No modules found. Maybe try running the `install` or `download` commands?", 0) end
 elseif arg[1] == "module" then
   if not arg[2] then error("Expected module name", 0) end
   local module, err = load_module(fs.combine(root_dir, fs.combine("modules", arg[2] .. ".lua")))
