@@ -11,12 +11,13 @@ local function write_coloured(colour, text)
 end
 
 --- Print usage for this program
-local commands = { "install", "modules", "module" }
+local commands = { "install", "modules", "module", "download" }
 local function print_usage()
   local name = fs.getName(shell.getRunningProgram()):gsub("%.lua$", "")
-  write_coloured(colours.cyan, name .. " modules ") print("Print the status of all modules")
-  write_coloured(colours.cyan, name .. " module  ") print("Print information about a given module")
-  write_coloured(colours.cyan, name .. " install ") print("Download all modules and create a startup file")
+  write_coloured(colours.cyan, name .. " modules  ") print("Print the status of all modules")
+  write_coloured(colours.cyan, name .. " module   ") print("Print information about a given module")
+  write_coloured(colours.cyan, name .. " install  ") print("Download all modules and create a startup file")
+  write_coloired(colours.cyan, name .. " download ") print("Download all modules WITHOUT creating a startup file")
 end
 
 --- Attempt to load a module from the given path, returning the module or false
@@ -93,11 +94,7 @@ local function complete_multi(text, options, add_spaces)
   return results
 end
 
-if arg.n == 0 then
-  printError("Expected some command")
-  print_usage()
-  error()
-elseif arg[1] == "install" then
+local function load_all_modules()
   -- Load all modules and update them.
   local module_dir = fs.combine(root_dir, "modules")
   local modules = fs.isDir(module_dir) and fs.list(module_dir)
@@ -118,6 +115,16 @@ elseif arg[1] == "install" then
     end
   end
   download_files(deps)
+end
+
+if arg.n == 0 then
+  printError("Expected some command")
+  print_usage()
+  error()
+elseif arg[1] == "download" then
+  load_all_modules()
+elseif arg[1] == "install" then
+  load_all_modules()
 
   -- If we're on CC 1.80 then we'll create a startup directory and use that.
   if fs.exists("rom/startup.lua") then
