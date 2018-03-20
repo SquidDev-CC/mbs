@@ -184,7 +184,6 @@ elseif arg[1] == "startup" then
     end
   end
 
-  local commands = { "install", "modules", "module" }
   local options = {}
   shell.setCompletionFunction(shell.getRunningProgram(), function(shell, index, text, previous)
     if index == 1 then
