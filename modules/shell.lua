@@ -47,12 +47,10 @@ return {
       _G['blit_window'] = _G['blit_window.lua']
     end
 
-    shell.setAlias("shell", fs.combine(path, "bin/shell.lua"))
-    shell.setAlias("shell.lua", fs.combine(path, "bin/shell.lua"))
-    shell.setAlias("sh", fs.combine(path, "bin/shell.lua"))
+    shell.setAlias("shell", "/" .. fs.combine(path, "bin/shell.lua"))
+    shell.setAlias("sh", "/" .. fs.combine(path, "bin/shell.lua"))
 
-    shell.setAlias("clear", fs.combine(path, "bin/clear.lua"))
-    shell.setAlias("clear.lua", fs.combine(path, "bin/clear.lua"))
+    shell.setAlias("clear", "/" .. fs.combine(path, "bin/clear.lua"))
   end,
 
   startup = function()

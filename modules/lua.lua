@@ -28,8 +28,7 @@ return {
 
   setup = function(path)
     if settings.get("mbs.lua.enabled") then
-      shell.setAlias("lua", fs.combine(path, "bin/lua.lua"))
-      shell.setAlias("lua.lua", fs.combine(path, "bin/lua.lua"))
+      shell.setAlias("lua", "/" .. fs.combine(path, "bin/lua.lua"))
     end
   end
 }
