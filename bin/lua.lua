@@ -44,14 +44,13 @@ local function serialize_impl(t, tracking, indent, tuple_length)
         end
       end
 
-      local newline, next_newline, sub_indent = "", ", ", ""
+      local next_newline, sub_indent =  ", ", ""
       if should_newline then
-        newline = "\n"
         next_newline = ",\n"
         sub_indent = indent .. " "
       end
 
-      local result, n = {(tuple_length and "(" or "{") .. newline}, 1
+      local result, n = {(tuple_length and "(" or "{") .. (should_newline and "\n" or " ")}, 1
 
       local seen = {}
       local first = true
@@ -92,7 +91,7 @@ local function serialize_impl(t, tracking, indent, tuple_length)
       end
 
       n = n + 1
-      result[n] = newline .. indent .. (tuple_length and ")" or "}")
+      result[n] = (should_newline and "\n" .. indent or " ") .. (tuple_length and ")" or "}")
       return table.concat(result)
     end
 
