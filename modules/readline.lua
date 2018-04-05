@@ -273,10 +273,10 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
           end
           if nHistoryPos then
             sLine = _tHistory[nHistoryPos]
-            nPos = #sLine
+            nPos, nScroll = #sLine, 0
           else
             sLine = ""
-            nPos = 0
+            nPos, nScroll = 0, 0
           end
           uncomplete()
           redraw()
@@ -287,6 +287,7 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
           clear()
           sLine = string.sub(sLine, 1, nPos - 1) .. string.sub(sLine, nPos + 1)
           nPos = nPos - 1
+          if nScroll > 0 then nScroll = nScroll - 1 end
           recomplete()
           redraw()
         end
