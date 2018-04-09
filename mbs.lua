@@ -17,7 +17,7 @@ local function print_usage()
   write_coloured(colours.cyan, name .. " modules  ") print("Print the status of all modules")
   write_coloured(colours.cyan, name .. " module   ") print("Print information about a given module")
   write_coloured(colours.cyan, name .. " install  ") print("Download all modules and create a startup file")
-  write_coloired(colours.cyan, name .. " download ") print("Download all modules WITHOUT creating a startup file")
+  write_coloured(colours.cyan, name .. " download ") print("Download all modules WITHOUT creating a startup file")
 end
 
 --- Attempt to load a module from the given path, returning the module or false
