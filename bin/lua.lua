@@ -188,6 +188,21 @@ local function handle(force_print, success, ...)
   end
 end
 
+if type(package) == "table" and type(package.path) == "string" then
+  -- Attempt to determine the shell directory with leading and trailing slashes
+  local dir = shell.dir()
+  if dir:sub(1, 1) ~= "/" then dir = "/" .. dir end
+  if dir:sub(#dir, #dir) ~= "/" then dir = dir .. "/" end
+
+  -- Strip the default "current program" package path
+  local strip_path = "?;?.lua;?/init.lua;"
+  local path = package.path
+  if path:sub(1, #strip_path) == strip_path then path = path:sub(#strip_path + 1) end
+
+  -- And append the current directory to the package path
+  package.path = dir .. "?;" .. dir .. "?.lua;" .. dir .. "?/init.lua;" .. path
+end
+
 while running do
   term.setTextColour(input_colour)
   term.write("in [" .. counter .. "]: ")
