@@ -28,8 +28,23 @@ local function pretty_sort(a, b)
   return false
 end
 
+local debug_info = type(debug) == "table" and type(debug.getinfo) == "function" and debug.getinfo
+local function pretty_function(fn)
+  if debug_info then
+    local info = debug_info(fn, "S")
+    if info.short_src and info.linedefined and info.linedefined >= 1 then
+      return "function<" .. info.short_src .. ":" .. info.linedefined .. ">"
+    end
+  end
+
+  return tostring(fn)
+end
+
 local function pretty_size(obj, tracking, limit)
-  if type(obj) ~= "table" or tracking[obj] then return #tostring(obj) end
+  local obj_type = type(obj)
+  if obj_type == "string" then return #string.format("%q", obj):gsub("\\\n", "\\n")
+  elseif obj_type == "function" then return #pretty_function(obj)
+  elseif obj_type ~= "table" or tracking[obj] then return #tostring(obj) end
 
   local count = 2
   tracking[obj] = true
@@ -57,6 +72,8 @@ local function pretty_impl(obj, tracking, width, height, indent, tuple_length)
     return
   elseif obj_type == "number" then
     return write_with(colours.magenta, tostring(obj))
+  elseif obj_type == "function" then
+    return write_with(colours.lightGrey, pretty_function(obj))
   elseif obj_type ~= "table" or tracking[obj] then
     return write_with(colours.lightGrey, tostring(obj))
   elseif (getmetatable(obj) or {}).__tostring then
@@ -151,7 +168,7 @@ local function pretty_impl(obj, tracking, width, height, indent, tuple_length)
       if not first then write_with(colours.white, next_newline) else first = false end
       write_with(colours.white, sub_indent)
 
-      if type(k) == "string" and #k < 16 and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
+      if type(k) == "string" and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
         write_with(colours.white, k .. " = ")
         pretty_impl(v, tracking, child_width, child_height, sub_indent)
       else
