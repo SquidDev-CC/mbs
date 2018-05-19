@@ -241,7 +241,11 @@ while running do
     end
 
     if func then
-      handle(force_print, pcall(func))
+      if settings.get("mbs.lua.traceback", true) then
+        handle(force_print, stack_trace.xpcall_with(func))
+      else
+        handle(force_print, pcall(func))
+      end
     else
       printError(e)
     end

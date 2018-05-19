@@ -1,11 +1,19 @@
+local function lib_load(path, name)
+  if not _G[name] then
+    os.loadAPI(fs.combine(path, "lib/" .. name .. ".lua"))
+    if not _G[name] then _G[name] = _G[name .. ".lua"] end
+  end
+end
+
 return {
   description = "Replaces the shell with an advanced version.",
 
   dependencies = {
     "bin/clear.lua",
     "bin/shell.lua",
-    "lib/scroll_window.lua",
     "lib/blit_window.lua",
+    "lib/scroll_window.lua",
+    "lib/stack_trace.lua",
   },
 
   -- When updating the defaults, one should also update bin/shell.lua
@@ -40,12 +48,9 @@ return {
   enabled = function() return settings.get("mbs.shell.enabled") end,
 
   setup = function(path)
-    os.loadAPI(fs.combine(path, "lib/scroll_window.lua"))
-    os.loadAPI(fs.combine(path, "lib/blit_window.lua"))
-    if not _G['scroll_window'] then
-      _G['scroll_window'] = _G['scroll_window.lua']
-      _G['blit_window'] = _G['blit_window.lua']
-    end
+    lib_load(path, "scroll_window")
+    lib_load(path, "blit_window")
+    lib_load(path, "stack_trace")
 
     shell.setAlias("shell", "/" .. fs.combine(path, "bin/shell.lua"))
     shell.setAlias("sh", "/" .. fs.combine(path, "bin/shell.lua"))
