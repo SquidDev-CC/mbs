@@ -12,98 +12,171 @@ local keywords = {
   [ "then" ] = true, [ "true" ] = true, [ "until" ] = true, [ "while" ] = true,
 }
 
-local function serialize_impl(t, tracking, indent, tuple_length)
-  local obj_type = type(t)
-  if obj_type == "table" and not tracking[t] then
-    tracking[t] = true
-
-    if next(t) == nil then
-      if tuple_length then
-        return "()"
-      else
-        return "{}"
-      end
-    else
-      local should_newline = false
-      local length = tuple_length or #t
-
-      local builder = 0
-      for k, v in pairs(t) do
-        if type(k) == "table" or type(v) == "table" then
-          should_newline = true
-          break
-        elseif type(k) == "number" and k >= 1 and k <= length and k % 1 == 0 then
-          builder = builder + #tostring(v) + 2
-        else
-          builder = builder + #tostring(v) + #tostring(k) + 2
-        end
-
-        if builder > 30 then
-          should_newline = true
-          break
-        end
-      end
-
-      local next_newline, sub_indent =  ", ", ""
-      if should_newline then
-        next_newline = ",\n"
-        sub_indent = indent .. " "
-      end
-
-      local result, n = {(tuple_length and "(" or "{") .. (should_newline and "\n" or " ")}, 1
-
-      local seen = {}
-      local first = true
-      for k = 1, length do
-        seen[k] = true
-        n = n + 1
-        local entry = sub_indent .. serialize_impl(t[k], tracking, sub_indent)
-
-        if not first then
-          entry = next_newline .. entry
-        else
-          first = false
-        end
-
-        result[n] = entry
-      end
-
-      for k,v in pairs(t) do
-        if not seen[k] then
-          local entry
-          if type(k) == "string" and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
-            entry = k .. " = " .. serialize_impl(v, tracking, sub_indent)
-          else
-            entry = "[" .. serialize_impl(k, tracking, sub_indent) .. "] = " .. serialize_impl(v, tracking, sub_indent)
-          end
-
-          entry = sub_indent .. entry
-
-          if not first then
-            entry = next_newline .. entry
-          else
-            first = false
-          end
-
-          n = n + 1
-          result[n] = entry
-        end
-      end
-
-      n = n + 1
-      result[n] = (should_newline and "\n" .. indent or " ") .. (tuple_length and ")" or "}")
-      return table.concat(result)
-    end
-
-  elseif obj_type == "string" then
-    return (string.format("%q", t):gsub("\\\n", "\\n"))
-  else
-    return tostring(t)
-  end
+local function write_with(colour, text)
+  term.setTextColour(colour)
+  write(text)
 end
 
-local function serialise(t, n)
-  return serialize_impl(t, {}, "", n)
+local function pretty_sort(a, b)
+  local ta, tb = type(a), type(b)
+
+  if ta == "string" then return tb ~= "string" or a < b
+  elseif tb == "string" then return false
+  end
+
+  if ta == "number" then return tb ~= "number" or a < b end
+  return false
+end
+
+local function pretty_size(obj, tracking, limit)
+  if type(obj) ~= "table" or tracking[obj] then return #tostring(obj) end
+
+  local count = 2
+  tracking[obj] = true
+  for k, v in pairs(obj) do
+    count = count + pretty_size(k, tracking, limit) + pretty_size(v, tracking, limit)
+    if count >= limit then break end
+  end
+  tracking[obj] = nil
+  return count
+end
+
+local function pretty_impl(obj, tracking, width, height, indent, tuple_length)
+  local obj_type = type(obj)
+  if obj_type == "string" then
+    local formatted = string.format("%q", obj):gsub("\\\n", "\\n")
+
+    -- Strings are limited to the size of the current buffer with a bit of padding
+    local limit = math.max(8, math.floor(width * height * 0.8))
+    if #formatted > limit then
+      write_with(colours.red, formatted:sub(1, limit - 3))
+      write_with(colours.grey, "...")
+    else
+      write_with(colours.red, formatted)
+    end
+    return
+  elseif obj_type == "number" then
+    return write_with(colours.magenta, tostring(obj))
+  elseif obj_type ~= "table" or tracking[obj] then
+    return write_with(colours.lightGrey, tostring(obj))
+  elseif (getmetatable(obj) or {}).__tostring then
+    return write_with(colours.white, tostring(obj))
+  end
+
+  local open, close = "{", "}"
+  if tuple_length then open, close = "(", ")" end
+
+  if (tuple_length == nil or tuple_length == 0) and next(obj) == nil then
+    return write_with(colours.white, open .. close)
+  elseif width <= 7 then
+    write_with(colours.white, open) write_with(colours.grey, " ... ") write_with(colours.white, close)
+    return
+  end
+
+  local should_newline = false
+  local length = tuple_length or #obj
+
+  -- Compute the "size" of this object and how many children it has.
+  local size, children, keys, kn = 2, 0, {}, 0
+  for k, v in pairs(obj) do
+    if type(k) == "number" and k >= 1 and k <= length and k % 1 == 0 then
+      local vs = pretty_size(v, tracking, width)
+      size = size + vs + 2
+      children = children + 1
+    else
+      kn = kn + 1
+      keys[kn] = k
+
+      local vs, ks = pretty_size(v, tracking, width), pretty_size(k, tracking, width)
+      size = size + vs + ks + 2
+      children = children + 2
+    end
+
+    -- Some aribtrary scale factor to stop long lines filling too much of the
+    -- screen
+    if size >= width * 0.6 then should_newline = true end
+  end
+
+  -- If we want to have multiple lines, but don't fit in one then abort!
+  if should_newline and height <= 1 then
+    write_with(colours.white, open) write_with(colours.grey, " ... ") write_with(colours.white, close)
+    return
+  end
+
+  -- Make sure our keys are in some sort of sensible order
+  table.sort(keys, pretty_sort)
+
+  local next_newline, sub_indent, child_width, child_height
+  if should_newline then
+    next_newline, sub_indent = ",\n", indent .. " "
+
+    -- We split our height over multiple items. A future improvement could be to
+    -- give more "height" to complex elements (such as tables)
+    height = height - 2
+    child_width, child_height = width - 2, math.ceil(height / children)
+
+    -- If there's more children then we have space then
+    if children > height then children = height - 3 end
+  else
+    next_newline, sub_indent =  ", ", ""
+
+    -- Like multi-line elements, we share the width across multiple children
+    width = width - 2
+    child_width, child_height = math.ceil(width / children), 1
+  end
+
+  write_with(colours.white, open .. (should_newline and "\n" or " "))
+
+  tracking[obj] = true
+  local seen = {}
+  local first = true
+  for k = 1, length do
+    if not first then write_with(colours.white, next_newline) else first = false end
+    write_with(colours.white, sub_indent)
+
+    seen[k] = true
+    pretty_impl(obj[k], tracking, child_width, child_height, sub_indent)
+
+    children = children - 1
+    if children < 0 then
+      if not first then write_with(colours.white, next_newline) else first = false end
+      write_with(colours.grey, sub_indent .. "...")
+      break
+    end
+  end
+
+  for i = 1, kn do
+    local k, v = keys[i], obj[keys[i]]
+    if not seen[k] then
+      if not first then write_with(colours.white, next_newline) else first = false end
+      write_with(colours.white, sub_indent)
+
+      if type(k) == "string" and #k < 16 and not keywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
+        write_with(colours.white, k .. " = ")
+        pretty_impl(v, tracking, child_width, child_height, sub_indent)
+      else
+        write_with(colours.white, "[")
+        pretty_impl(k, tracking, child_width, child_height, sub_indent)
+        write_with(colours.white, "] = ")
+        pretty_impl(v, tracking, child_width, child_height, sub_indent)
+      end
+
+      children = children - 1
+      if children < 0 then
+        if not first then write_with(colours.white, next_newline) else first = false end
+        write_with(colours.grey, sub_indent .. "...")
+        break
+      end
+    end
+  end
+  tracking[obj] = nil
+
+  write_with(colours.white, (should_newline and "\n" .. indent or " ") .. (tuple_length and ")" or "}"))
+end
+
+local function pretty(t, n)
+  local width, height = term.getSize()
+  return pretty_impl(t, {}, width, height, "", n)
 end
 
 local running = true
@@ -163,10 +236,10 @@ local function set_output(out, length)
     if type(meta) == "table" and type(meta.__tostring) == "function" then
       print(tostring(out))
     else
-      print(serialise(out, length))
+      print(pretty(out, length))
     end
   else
-    print(serialise(out))
+    print(pretty(out))
   end
 end
 
