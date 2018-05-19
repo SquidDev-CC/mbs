@@ -116,7 +116,7 @@ local function pretty_impl(obj, tracking, width, height, indent, tuple_length)
     child_width, child_height = width - 2, math.ceil(height / children)
 
     -- If there's more children then we have space then
-    if children > height then children = height - 3 end
+    if children > height then children = height - 2 end
   else
     next_newline, sub_indent =  ", ", ""
 
@@ -176,7 +176,7 @@ end
 
 local function pretty(t, n)
   local width, height = term.getSize()
-  return pretty_impl(t, {}, width, height, "", n)
+  return pretty_impl(t, {}, width, height - 2, "", n)
 end
 
 local running = true
@@ -232,12 +232,7 @@ local function set_output(out, length)
   term.setTextColour(text_colour)
 
   if type(out) == "table" then
-    local meta = getmetatable(out)
-    if type(meta) == "table" and type(meta.__tostring) == "function" then
-      print(tostring(out))
-    else
-      print(pretty(out, length))
-    end
+    print(pretty(out, length))
   else
     print(pretty(out))
   end
