@@ -42,7 +42,7 @@ local function trim_traceback(target, marker)
   end
 
   -- Trim elements from this file and xpcall invocations
-  while ttarget[t_len]:find("^\tstack_trace%.lua:%d+:") or
+  while t_len >= 1 and ttarget[t_len]:find("^\tstack_trace%.lua:%d+:") or
         ttarget[t_len] == "\t[C]: in function 'xpcall'" or ttarget[t_len] == "  xpcall: " do
     table.remove(ttarget, t_len)
     t_len = t_len - 1
