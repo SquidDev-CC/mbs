@@ -1,5 +1,7 @@
 local arg = table.pack(...)
 local root_dir = ".mbs"
+local rom_dir = "rom/.mbs"
+local install_dir = fs.exists(root_dir) and root_dir or rom_dir
 local repo_url = "https://raw.githubusercontent.com/SquidDev-CC/mbs/master/"
 
 --- Write a string with the given colour to the terminal
@@ -169,7 +171,7 @@ elseif arg[1] == "install" then
   print("Please reboot to apply changes.")
 elseif arg[1] == "startup" then
   -- Gather a list of all modules
-  local module_dir = fs.combine(root_dir, "modules")
+  local module_dir = fs.combine(install_dir, "modules")
   local files = fs.isDir(module_dir) and fs.list(module_dir) or {}
 
   -- Load those modules and determine which are enabled.
@@ -195,16 +197,16 @@ elseif arg[1] == "startup" then
 
   -- Setup those modules
   for _, module in ipairs(enabled) do
-    if type(module.setup) == "function" then module.setup(root_dir) end
+    if type(module.setup) == "function" then module.setup(install_dir) end
   end
 
   -- And run the startup hook if needed
   for _, module in ipairs(enabled) do
-    if type(module.startup) == "function" then module.startup(root_dir) end
+    if type(module.startup) == "function" then module.startup(install_dir) end
   end
 
 elseif arg[1] == "modules" then
-  local module_dir = fs.combine(root_dir, "modules")
+  local module_dir = fs.combine(install_dir, "modules")
   local files = fs.isDir(module_dir) and fs.list(module_dir) or {}
   local found_any = false
 
@@ -229,7 +231,7 @@ elseif arg[1] == "modules" then
   if not found_any then error("No modules found. Maybe try running the `install` command?", 0) end
 elseif arg[1] == "module" then
   if not arg[2] then error("Expected module name", 0) end
-  local module, err = load_module(fs.combine(root_dir, fs.combine("modules", arg[2] .. ".lua")))
+  local module, err = load_module(fs.combine(install_dir, fs.combine("modules", arg[2] .. ".lua")))
   if not module then error(err, 0) end
 
   write(module.description)
