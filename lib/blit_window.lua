@@ -252,12 +252,36 @@ function create(original)
   end
 
   function redirect.updateSize()
-    local _, y = original.getSize()
-    sizeY = y
+    local new_x, new_y = original.getSize()
+    if new_x == sizeX and new_y == sizeY then return end
+
+    -- For any existing lines, trim them
+    for y = 1, sizeY do
+      if new_x < sizeX then
+        text[y] = text[y]:sub(1, new_x)
+        text_colour[y] = text_colour[y]:sub(1, new_x)
+        back_colour[y] = back_colour[y]:sub(1, new_x)
+      elseif new_x > sizeX then
+        text[y] = text[y] .. (" "):rep(new_x - sizeX)
+        text_colour[y] = text_colour[y] .. (cur_text_colour):rep(new_x - sizeX)
+        back_colour[y] = back_colour[y] .. (cur_back_colour):rep(new_x - sizeX)
+      end
+    end
+
+    -- Add any new lines we might need.
+    local text_line = (" "):rep(new_x)
+    local fore_line = (cur_text_colour):rep(new_x)
+    local back_line = (cur_back_colour):rep(new_x)
+    for y = sizeY + 1, new_y do
+      text[y] = text_line
+      text_colour[y] = fore_line
+      back_colour[y] = back_line
+    end
+
+    sizeX = new_x
+    sizeY = new_y
   end
 
   redirect.clear()
   return redirect
 end
-
-return create

@@ -559,7 +559,7 @@ else
             change = -offset
           elseif e == "term_resize" then
             redirect.updateSize()
-            redirect.draw(offset)
+            redirect.draw(offset, true)
           end
 
           if change ~= 0 and term.current() == redirect and not redirect.isPrivateMode() then

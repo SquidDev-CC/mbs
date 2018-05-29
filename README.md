@@ -15,7 +15,7 @@ MBS is a series of utilities for improving the default CraftOS experience.
 ![](img/02-lua-traceback.png "Stack traces in the REPL")
 
 ### `read` improvements
-#### readline line keybindings
+#### readline keybindings
 ![](img/10-readline-movement.gif "readline like keybindings")
 
 ### Shell extensions

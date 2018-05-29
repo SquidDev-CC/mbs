@@ -125,12 +125,12 @@ function create(original)
     local preStart = math.min(1, preStop)
     local postStart = cursor_x + string.len(writeText)
     local postStop = sizeX
-    local sub, rep = string.sub, string.rep
+    local sub = string.sub
 
     text[scroll_cursor_y] = sub(lineText, preStart, preStop)..writeText..sub(lineText, postStart, postStop)
     text_colour[scroll_cursor_y] = sub(lineColor, preStart, preStop)..writeFore..sub(lineColor, postStart, postStop)
     back_colour[scroll_cursor_y] = sub(lineBack, preStart, preStop)..writeBack..sub(lineBack, postStart, postStop)
-    cursor_x = pos + string.len(writeText)
+    cursor_x = pos + #writeText
   end
 
   function redirect.clear()
@@ -140,10 +140,14 @@ function create(original)
       return redirect.beginPrivateMode().clear()
     end
 
+    local text_line = (" "):rep(sizeX)
+    local fore_line = (cur_text_colour):rep(sizeX)
+    local back_line = (cur_back_colour):rep(sizeX)
+
     for i = scroll_offset + 1, sizeY + scroll_offset do
-      text[i] = string.rep(" ", sizeX)
-      text_colour[i] = string.rep(cur_text_colour, sizeX)
-      back_colour[i] = string.rep(cur_back_colour, sizeX)
+      text[i] = text_line
+      text_colour[i] = fore_line
+      back_colour[i] = back_line
     end
 
     if bubble then return original.clear() end
@@ -293,7 +297,7 @@ function create(original)
     redirect.getPaletteColor = redirect.getPaletteColour
   end
 
-  function redirect.draw(offset)
+  function redirect.draw(offset, clear)
     if delegate then return end
 
     if original.getPaletteColour then
@@ -301,6 +305,10 @@ function create(original)
         original.setPaletteColour( colour, pal[1], pal[2], pal[3] )
       end
     end
+
+    original.setTextColour(2 ^ tonumber(cur_text_colour, 16))
+    original.setBackgroundColor(2 ^ tonumber(cur_back_colour, 16))
+    if clear then original.clear() end
 
     local original = original
     local scroll_offset = scroll_offset + (offset or 0)
@@ -311,8 +319,6 @@ function create(original)
     end
 
     original.setCursorPos(cursor_x, cursor_y - offset)
-    original.setTextColour(2 ^ tonumber(cur_text_colour, 16))
-    original.setBackgroundColor(2 ^ tonumber(cur_back_colour, 16))
     original.setCursorBlink(cursor_blink)
   end
 
@@ -380,12 +386,48 @@ function create(original)
   end
 
   function redirect.updateSize()
-    local _, y = original.getSize()
-    sizeY = y
+    -- Update the delegate window.
+    if delegate then delegate.updateSize() end
+
+    -- If nothing has changed then just skip.
+    local new_x, new_y = original.getSize()
+    if new_x == sizeX and new_y == sizeY then return end
+
+    -- If we have an insufficient number of lines then add some in.
+    local total_height = #text
+
+    -- For any existing lines, trim them
+    for y = 1, total_height do
+      if new_x < sizeX then
+        text[y] = text[y]:sub(1, new_x)
+        text_colour[y] = text_colour[y]:sub(1, new_x)
+        back_colour[y] = back_colour[y]:sub(1, new_x)
+      elseif new_x > sizeX then
+        text[y] = text[y] .. (" "):rep(new_x - sizeX)
+        text_colour[y] = text_colour[y] .. (cur_text_colour):rep(new_x - sizeX)
+        back_colour[y] = back_colour[y] .. (cur_back_colour):rep(new_x - sizeX)
+      end
+    end
+
+    -- Add any new lines we might need.
+    local text_line = (" "):rep(new_x)
+    local fore_line = (cur_text_colour):rep(new_x)
+    local back_line = (cur_back_colour):rep(new_x)
+    for y = total_height + 1, new_y do
+      text[y] = text_line
+      text_colour[y] = fore_line
+      back_colour[y] = back_line
+    end
+
+    sizeX = new_x
+    sizeY = new_y
+
+    -- Update the scroll offset. For now we just go back to the bottom
+    scroll_offset = #text - sizeY
+    scroll_cursor_y = scroll_offset + cursor_y
+    trim()
   end
 
   redirect.clear()
   return redirect
 end
-
-return create
