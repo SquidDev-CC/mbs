@@ -1,6 +1,6 @@
 local colour_lookup = {}
 for i = 0, 16 do
-  colour_lookup[string.format("%x", i)] = 2 ^ i
+  colour_lookup[2 ^ i] = string.format("%x", i)
 end
 
 function create(original)
@@ -27,7 +27,7 @@ function create(original)
   if original.getPaletteColour then
     for i = 0, 15 do
       local c = 2 ^ i
-      palette[c] = { original.getPaletteColour( c ) }
+      palette[c] = { original.getPaletteColour(c) }
     end
   end
 
@@ -69,6 +69,11 @@ function create(original)
   end
 
   function redirect.blit(writeText, writeFore, writeBack)
+    if type(writeText) ~= "string" then error("bad argument #1 (expected string, got " .. type(writeText) .. ")", 2) end
+    if type(writeFore) ~= "string" then error("bad argument #2 (expected string, got " .. type(writeFore) .. ")", 2) end
+    if type(writeBack) ~= "string" then error("bad argument #3 (expected string, got " .. type(writeBack) .. ")", 2) end
+    if #writeFore ~= #writeText or #writeBack ~= #writeText then error("Arguments must be the same length", 2) end
+
     if bubble then original.blit(writeText, writeFore, writeBack) end
     local pos = cursor_x
 
@@ -137,8 +142,11 @@ function create(original)
   end
 
   function redirect.setCursorPos(x, y)
-    cursor_x = math.floor(tonumber(x)) or cursor_x
-    cursor_y = math.floor(tonumber(y)) or cursor_y
+    if type(x) ~= "number" then error("bad argument #1 (expected number, got " .. type(x) .. ")", 2) end
+    if type(y) ~= "number" then error("bad argument #2 (expected number, got " .. type(y) .. ")", 2) end
+
+    cursor_x = math.floor(x)
+    cursor_y = math.floor(y)
     if bubble then return original.setCursorPos(x, y) end
   end
 
@@ -152,7 +160,7 @@ function create(original)
   end
 
   function redirect.scroll(n)
-    n = tonumber(n) or 1
+    if type(n) ~= "number" then error("bad argument #1 (expected number, got " .. type(n) .. ")", 2) end
 
     local empty_text = string.rep(" ", sizeX)
     local empty_text_colour = string.rep(cur_text_colour, sizeX)
@@ -175,13 +183,15 @@ function create(original)
   end
 
   function redirect.setTextColour(clr)
-    cur_text_colour = colour_lookup[clr] or string.format("%x", math.floor(math.log(clr) / math.log(2)))
+    if type(clr) ~= "number" then error("bad argument #1 (expected number, got " .. type(clr) .. ")", 2) end
+    cur_text_colour = colour_lookup[clr] or error("Invalid colour (got " .. clr .. ")" , 2)
     if bubble then return original.setTextColour(clr) end
   end
   redirect.setTextColor = redirect.setTextColour
 
   function redirect.setBackgroundColour(clr)
-    cur_back_colour = colour_lookup[clr] or string.format("%x", math.floor(math.log(clr) / math.log(2)))
+    if type(clr) ~= "number" then error("bad argument #1 (expected number, got " .. type(clr) .. ")", 2) end
+    cur_back_colour = colour_lookup[clr] or error("Invalid colour (got " .. clr .. ")" , 2)
     if bubble then return original.setBackgroundColour(clr) end
   end
   redirect.setBackgroundColor = redirect.setBackgroundColour
@@ -210,7 +220,7 @@ function create(original)
       else
           if type(r) ~= "number" then error("bad argument #2 (expected number, got " .. type(r) .. ")", 2) end
           if type(g) ~= "number" then error("bad argument #3 (expected number, got " .. type(g) .. ")", 2) end
-          if type(b) ~= "number" then error("bad argument #4 (expected number, got " .. type(b ) .. ")", 2 ) end
+          if type(b) ~= "number" then error("bad argument #4 (expected number, got " .. type(b) .. ")", 2) end
 
           palcol[1], palcol[2], palcol[3] = r, g, b
       end
@@ -231,8 +241,8 @@ function create(original)
     if not target then target = original end
 
     if target.getPaletteColour then
-      for colour, pal in pairs( palette ) do
-        target.setPaletteColour( colour, pal[1], pal[2], pal[3] )
+      for colour, pal in pairs(palette) do
+        target.setPaletteColour(colour, pal[1], pal[2], pal[3])
       end
     end
 
