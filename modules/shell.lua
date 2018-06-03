@@ -53,9 +53,11 @@ return {
     lib_load(path, "stack_trace")
 
     shell.setAlias("shell", "/" .. fs.combine(path, "bin/shell.lua"))
-    shell.setAlias("sh", "/" .. fs.combine(path, "bin/shell.lua"))
-
     shell.setAlias("clear", "/" .. fs.combine(path, "bin/clear.lua"))
+
+    shell.setCompletionFunction(fs.combine(path, "bin/shell.lua"), function(shell, index, text, previous)
+      if index == 1 then return shell.completeProgram(text) end
+    end)
   end,
 
   startup = function()
