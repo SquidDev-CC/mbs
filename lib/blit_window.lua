@@ -106,7 +106,7 @@ function create(original)
     local preStart = math.min(1, preStop)
     local postStart = cursor_x + string.len(writeText)
     local postStop = sizeX
-    local sub, rep = string.sub, string.rep
+    local sub = string.sub
 
     text[cursor_y] = sub(lineText, preStart, preStop)..writeText..sub(lineText, postStart, postStop)
     text_colour[cursor_y] = sub(lineColor, preStart, preStop)..writeFore..sub(lineColor, postStart, postStop)

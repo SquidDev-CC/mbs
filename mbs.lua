@@ -54,7 +54,6 @@ local function download_files(files)
   if #files == 0 then return end
 
   local urls = {}
-  local remaining = #files
   for _, file in ipairs(files) do
     local url = repo_url .. file
     http.request(url)
@@ -62,7 +61,7 @@ local function download_files(files)
   end
 
   while true do
-    local event, url, arg1, arg2 = os.pullEvent()
+    local event, url, arg1 = os.pullEvent()
     if event == "http_success" and urls[url] then
       local handle = fs.open(fs.combine(root_dir, urls[url]), "w")
       handle.write(arg1.readAll())
@@ -75,8 +74,6 @@ local function download_files(files)
       error("Could not download " .. urls[url], 0)
     end
   end
-
-  return true
 end
 
 --- read completion helper, completes text using the given options
@@ -108,7 +105,7 @@ local function load_all_modules()
   -- Scan for dependencies in enabled modules, downloading them as well
   local deps = {}
   for i = 1, #files do
-    local module, err = load_module(fs.combine(root_dir, files[i]))
+    local module = load_module(fs.combine(root_dir, files[i]))
     if module then
       setup_module(module)
       if module.enabled() then
@@ -186,7 +183,6 @@ elseif arg[1] == "startup" then
     end
   end
 
-  local options = {}
   shell.setCompletionFunction(shell.getRunningProgram(), function(shell, index, text, previous)
     if index == 1 then
       return complete_multi(text, commands, true)

@@ -55,7 +55,8 @@ end
 local function xpcall_with(fn)
   -- So this is rather grim: we need to get the full traceback and current one and remove
   -- the common prefix
-  local res = table.pack(xpcall(fn, traceback)) if not ok then trace = traceback("trace.lua:1:") end
+  local trace
+  local res = table.pack(xpcall(fn, traceback)) if not res[1] then trace = traceback("trace.lua:1:") end
   local ok, err = res[1], res[2]
 
   if not ok and err ~= nil then

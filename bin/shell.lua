@@ -87,7 +87,7 @@ local function createShellEnv(sDir)
     end
 
     local sError = "Error loading module '" .. name .. "':"
-    for n,searcher in ipairs(package.loaders) do
+    for _, searcher in ipairs(package.loaders) do
       local loader, err = searcher(name)
       if loader then
         package.loaded[name] = sentinel
@@ -318,7 +318,7 @@ function shell.programs(_bIncludeHidden)
 
   -- Sort and return
   local tItemList = {}
-  for sItem, b in pairs(tItems) do
+  for sItem in pairs(tItems) do
     table.insert(tItemList, sItem)
   end
   table.sort(tItemList)
@@ -335,7 +335,7 @@ local function completeProgram(sLine)
     local tSeen = {}
 
     -- Add aliases
-    for sAlias, sCommand in pairs(tAliases) do
+    for sAlias in pairs(tAliases) do
       if #sAlias > #sLine and string.sub(sAlias, 1, #sLine) == sLine then
         local sResult = string.sub(sAlias, #sLine + 1)
         if not tSeen[sResult] then
@@ -348,8 +348,8 @@ local function completeProgram(sLine)
     -- Add all subdirectories. We don't include files as they will be added in the block below
     local tDirs = fs.complete(sLine, sDir, false, false)
     for i = 1, #tDirs do
+      local sResult = tDirs[i]
       if not tSeen[sResult] then
-        local sResult = tDirs[i]
         table.insert(tResults, sResult)
         tSeen[sResult] = true
       end
