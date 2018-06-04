@@ -93,11 +93,22 @@ local function complete_multi(text, options, add_spaces)
   return results
 end
 
+--- Append an object to a list if it is not already contained within
+local function add_unique(list, x)
+  for i = 1, #list do if list[i] == x then return end end
+  list[#list + 1] = x
+end
+
 local function load_all_modules()
   -- Load all modules and update them.
   local module_dir = fs.combine(root_dir, "modules")
-  local modules = fs.isDir(module_dir) and fs.list(module_dir)
-    or { "lua.lua", "readline.lua", "shell.lua" }
+  local modules = fs.isDir(module_dir) and fs.list(module_dir) or {}
+
+  -- Add the default modules if not already there.
+  for _, module in ipairs { "lua.lua", "pager.lua", "readline.lua", "shell.lua" } do
+    add_unique(modules, module)
+  end
+
   local files = {}
   for i = 1, #modules do files[i] = "modules/" .. modules[i] end
   download_files(files)
