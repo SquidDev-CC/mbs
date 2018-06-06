@@ -26,7 +26,7 @@ return {
       if index == 1 then return help.completeTopic(text) end
     end)
 
-    local native_pprint, native_ptabulate = textutils.pagedPrint, textutils.pagedPrint
+    local native_pprint, native_ptabulate = textutils.pagedPrint, textutils.pagedTabulate
     textutils.pagedPrint = function(text, free_lines)
       local mode = settings.get("mbs.pager.mode")
       if mode == "none" then
