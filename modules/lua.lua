@@ -28,6 +28,12 @@ return {
       description = "Show an error traceback when an input errors",
       default = true,
     },
+    {
+      name= "mbs.lua.pretty_height",
+      description = "The height to fit the pretty-printer output to. Set to "
+        .. "false to disable, true to use the terminal height or a number for a constant height.",
+      default = true,
+    },
   },
 
   enabled = function() return settings.get("mbs.lua.enabled") end,
