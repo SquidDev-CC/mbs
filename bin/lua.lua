@@ -29,15 +29,28 @@ local function pretty_sort(a, b)
 end
 
 local debug_info = type(debug) == "table" and type(debug.getinfo) == "function" and debug.getinfo
+local debug_local = type(debug) == "table" and type(debug.getlocal) == "function" and debug.getlocal
 local function pretty_function(fn)
-  if debug_info then
-    local info = debug_info(fn, "S")
-    if info.short_src and info.linedefined and info.linedefined >= 1 then
-      return "function<" .. info.short_src .. ":" .. info.linedefined .. ">"
-    end
+  local info = debug_info and debug_info(fn, "Su")
+
+  -- Include function source position if available
+  local name
+  if info and info.short_src and info.linedefined and info.linedefined >= 1 then
+    name = "function<" .. info.short_src .. ":" .. info.linedefined .. ">"
+  else
+    name = tostring(fn)
   end
 
-  return tostring(fn)
+  -- Include arguments if a Lua function and if available. Lua will report "C"
+  -- functions as variadic.
+  if info and info.what == "Lua" and info.nparams and debug_local then
+    local args = {}
+    for i = 1, info.nparams do args[i] = debug_local(fn, i) or "?" end
+    if info.isvararg then args[#args + 1] = "..." end
+    name = name .. "(" .. table.concat(args, ", ") .. ")"
+  end
+
+  return name
 end
 
 local function pretty_size(obj, tracking, limit)
