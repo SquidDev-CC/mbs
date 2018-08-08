@@ -41,6 +41,7 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
 
   local sLine = _sDefault or ""
   local nPos, nScroll = #sLine, 0
+  local tKillRing, nKillRing = {}, 0
 
   local nHistoryPos
   local tDown = {}
@@ -136,8 +137,19 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
     term.setCursorPos(sx + nPos - nScroll, cy)
   end
 
+  local function nsub(start, fin)
+    if start < 1 or fin < start then return "" end
+    return sLine:sub(start, fin)
+  end
+
   local function clear()
     redraw(true)
+  end
+
+  local function kill(text)
+    if #text == "" then return end
+    nKillRing = nKillRing + 1
+    tKillRing[nKillRing] = text
   end
 
   recomplete()
@@ -186,8 +198,10 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
           redraw()
         end
         break
+
+      -- Moving through text/completions
       elseif nMod == 1 and param == keys.d then
-        -- Enter
+        -- End of stream, abort
         if nCompletion then
           clear()
           uncomplete()
@@ -281,29 +295,11 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
           uncomplete()
           redraw()
         end
-      elseif nMod == 0 and param == keys.backspace then
-        -- Backspace
-        if nPos > 0 then
-          clear()
-          sLine = string.sub(sLine, 1, nPos - 1) .. string.sub(sLine, nPos + 1)
-          nPos = nPos - 1
-          if nScroll > 0 then nScroll = nScroll - 1 end
-          recomplete()
-          redraw()
-        end
       elseif (nMod == 0 and param == keys.home) or (nMod == 1 and param == keys.a) then
         -- Home
         if nPos > 0 then
           clear()
           nPos = 0
-          recomplete()
-          redraw()
-        end
-      elseif nMod == 0 and param == keys.delete then
-        -- Delete
-        if nPos < #sLine then
-          clear()
-          sLine = string.sub(sLine, 1, nPos) .. string.sub(sLine, nPos + 2)
           recomplete()
           redraw()
         end
@@ -315,23 +311,81 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
           recomplete()
           redraw()
         end
+      -- Changing text
+      elseif nMod == 1 and param == keys.t then
+        -- Transpose char
+        local prev, cur
+        if nPos == #sLine then prev, cur = nPos - 1, nPos
+        elseif nPos == 0 then prev, cur = 1, 2
+        else prev, cur = nPos, nPos + 1
+        end
+
+        sLine = nsub(1, prev - 1) .. nsub(cur, cur) .. nsub(prev, prev) .. nsub(cur + 1, #sLine)
+        nPos = math.min(#sLine, cur)
+
+        -- We need the clear to remove the completion
+        clear(); recomplete(); redraw()
+      elseif nMod == 2 and param == keys.u then
+        -- Upcase word
+        if nPos < #sLine then
+          local nNext = nextWord()
+          sLine = nsub(1, nPos) .. nsub(nPos + 1, nNext):upper() .. nsub(nNext + 1, #sLine)
+          nPos = nNext
+          clear(); recomplete(); redraw()
+        end
+      elseif nMod == 2 and param == keys.l then
+        -- Lowercase word
+        if nPos < #sLine then
+          local nNext = nextWord()
+          sLine = nsub(1, nPos) .. nsub(nPos + 1, nNext):lower() .. nsub(nNext + 1, #sLine)
+          nPos = nNext
+          clear(); recomplete(); redraw()
+        end
+      elseif nMod == 2 and param == keys.c then
+        -- Capitalize word
+        if nPos < #sLine then
+          local nNext = nextWord()
+          sLine = nsub(1, nPos) .. nsub(nPos + 1, nPos + 1):upper() .. nsub(nPos + 2, nNext):lower() .. nsub(nNext + 1, #sLine)
+          nPos = nNext
+          clear(); recomplete(); redraw()
+        end
+
+      -- Killing text
+      elseif nMod == 0 and param == keys.backspace then
+        -- Backspace
+        if nPos > 0 then
+          clear()
+          sLine = string.sub(sLine, 1, nPos - 1) .. string.sub(sLine, nPos + 1)
+          nPos = nPos - 1
+          if nScroll > 0 then nScroll = nScroll - 1 end
+          recomplete()
+          redraw()
+        end
+      elseif nMod == 0 and param == keys.delete then
+        -- Delete
+        if nPos < #sLine then
+          clear()
+          sLine = string.sub(sLine, 1, nPos) .. string.sub(sLine, nPos + 2)
+          recomplete()
+          redraw()
+        end
       elseif nMod == 1 and param == keys.u then
         -- Delete from cursor to beginning of line
         if nPos > 0 then
           clear()
+          kill(sLine:sub(1, nPos))
           sLine = sLine:sub(nPos + 1)
           nPos = 0
-          recomplete()
-          redraw()
+          recomplete(); redraw()
         end
       elseif nMod == 1 and param == keys.k then
         -- Delete from cursor to end of line
         if nPos < #sLine then
           clear()
+          kill(sLine:sub(nPos + 1))
           sLine = sLine:sub(1, nPos)
           nPos = #sLine
-          recomplete()
-          redraw()
+          recomplete(); redraw()
         end
       elseif nMod == 2 and param == keys.d then
         -- Delete from cursor to end of next word
@@ -339,9 +393,9 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
             local nNext = nextWord()
             if nNext ~= nPos then
               clear()
+              kill(sLine:sub(nPos + 1, nNext))
               sLine = sLine:sub(1, nPos) .. sLine:sub(nNext + 1)
-              recomplete()
-              redraw()
+              recomplete(); redraw()
             end
         end
       elseif nMod == 1 and param == keys.w then
@@ -350,12 +404,21 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
           local nPrev = prevWord(nPos)
           if nPrev ~= nPos then
             clear()
+            kill(sLine:sub(nPrev + 1, nPos))
             sLine = sLine:sub(1, nPrev) .. sLine:sub(nPos + 1)
             nPos = nPrev
-            recomplete()
-            redraw()
+            recomplete(); redraw()
           end
         end
+      elseif nMod == 1 and param == keys.y then
+        local insert = tKillRing[nKillRing]
+        if insert then
+          clear()
+          sLine = sLine:sub(1, nPos) .. insert .. sLine:sub(nPos + 1)
+          nPos = nPos + #insert
+          recomplete(); redraw()
+        end
+      -- Misc
       elseif nMod == 0 and param == keys.tab then
         -- Tab (accept autocomplete)
         acceptCompletion()
