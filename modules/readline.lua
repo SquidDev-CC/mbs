@@ -172,8 +172,10 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
   end
   while true do
     local sEvent, param, param1, param2 = os.pullEvent()
-    if nMod == 0 and sEvent == "char" then
+    if (nMod == 0 or nMod == 3) and sEvent == "char" then
       -- Typed key
+      -- Alt+X will queue a char event, so we limit ourselves to cases where
+      -- no modifier is used, or Ctrl+Alt are (equivalent to AltGr).
       clear()
       sLine = string.sub(sLine, 1, nPos) .. param .. string.sub(sLine, nPos + 1)
       nPos = nPos + 1
