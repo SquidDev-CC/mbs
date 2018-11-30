@@ -338,7 +338,8 @@ while running do
       func, e = load(line, "=lua", "t", environment)
       force_print = false
     else
-      func, e = load("return _noTail(" .. line .. ")", "=lua", "t", environment)
+      local wrapped_func = load("return _noTail(" .. line .. ")", "=lua", "t", environment)
+      if wrapped_func then func = wrapped_func end
     end
 
     if func then
