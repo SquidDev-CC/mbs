@@ -21,6 +21,9 @@ local function clamp(value, min, max)
   return value
 end
 
+--- Keys which are used in combinations involving the "meta" key.
+local meta_keys = "ulcdbf"
+
 local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
   if _sReplaceChar ~= nil and type(_sReplaceChar) ~= "string" then
     error("bad argument #1 (expected string, got " .. type(_sReplaceChar) .. ")", 2)
@@ -172,10 +175,11 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
   end
   while true do
     local sEvent, param, param1, param2 = os.pullEvent()
-    if (nMod == 0 or nMod == 3) and sEvent == "char" then
+    if sEvent == "char" and (nMod == 0 or nMod == 3 or (nMod == 2 and not meta_keys:find(param, 1, true))) then
       -- Typed key
       -- Alt+X will queue a char event, so we limit ourselves to cases where
-      -- no modifier is used, or Ctrl+Alt are (equivalent to AltGr).
+      -- no modifier is used, or Ctrl+Alt are (equivalent to AltGr), or the Alt
+      -- key is used and we have no known combination.
       clear()
       sLine = string.sub(sLine, 1, nPos) .. param .. string.sub(sLine, nPos + 1)
       nPos = nPos + 1
@@ -189,6 +193,10 @@ local function read(_sReplaceChar, _tHistory, _fnComplete, _sDefault)
       recomplete()
       redraw()
     elseif sEvent == "key" then
+      -- All keybindigns within the read loop.
+      -- IMPORTANT: Please update the meta_keys variable up top. Ideally we'd
+      -- make each function operate on a state, and run outside the loop, but
+      -- this will do for now.
       if param == keys.leftCtrl or param == keys.rightCtrl or param == keys.leftAlt or param == keys.rightAlt then
         tDown[param] = true
         updateModifier()
