@@ -43,6 +43,11 @@ return {
       description = "Show an error traceback when a program errors",
       default = true,
     },
+    {
+      name = "mbs.shell.require_path",
+      description = "The path from that require will use by default. Set to false to use the CraftOS default.",
+      default = false,
+    },
   },
 
   enabled = function() return settings.get("mbs.shell.enabled") end,
