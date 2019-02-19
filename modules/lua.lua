@@ -1,3 +1,10 @@
+local function lib_load(path, name)
+  if not _G[name] then
+    os.loadAPI(fs.combine(path, "lib/" .. name .. ".lua"))
+    if not _G[name] then _G[name] = _G[name .. ".lua"] end
+  end
+end
+
 return {
   description = "Replaces the Lua REPL with an advanced version.",
 
@@ -34,15 +41,17 @@ return {
         .. "false to disable, true to use the terminal height or a number for a constant height.",
       default = true,
     },
+    {
+      name= "mbs.lua.highlight",
+      description = "Whether to apply syntax highlighting to the REPL's input.",
+      default = true,
+    },
   },
 
   enabled = function() return settings.get("mbs.lua.enabled") end,
 
   setup = function(path)
-    if not _G["stack_trace"] then
-      os.loadAPI(fs.combine(path, "lib/stack_trace.lua"))
-      if not _G["stack_trace"] then _G["stack_trace"] = _G["stack_trace.lua"] end
-    end
+    lib_load(path, "stack_trace")
 
     shell.setAlias("lua", "/" .. fs.combine(path, "bin/lua.lua"))
   end

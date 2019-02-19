@@ -13,14 +13,18 @@ local tAliases = (parentShell and parentShell.aliases()) or {}
 local tCompletionInfo = (parentShell and parentShell.getCompletionInfo()) or {}
 local tProgramStack = {}
 local history = parentShell and type(parentShell.history) == "function" and parentShell.history()
-local fCustomRead = read
+local fWrapper = nil
 
 local shell = {}
 local function createShellEnv(sDir)
   local tEnv = {}
   tEnv["shell"] = shell
   tEnv["multishell"] = multishell
-  tEnv["read"] = fCustomRead
+
+  if fWrapper then
+    if read then tEnv.read = fWrapper(read) end
+    if readline and readline.read then tEnv.readline = { read = fWrapper(readline.read) } end
+  end
 
   local package = {}
   package.loaded = {
@@ -536,12 +540,12 @@ else
   print(os.version() .. " (+MBS)")
   term.setTextColour(textColour)
 
-  fCustomRead = function(...)
+  fWrapper = function(func) return function(...)
     local offset = 0
-    local line = nil
+    local result = nil
     local args = table.pack(...)
     parallel.waitForAny(
-      function() line = read(table.unpack(args, 1, args.n)) end,
+      function() result = func(table.unpack(args, 1, args.n)) end,
       function()
         while true do
           local change = 0
@@ -571,8 +575,10 @@ else
     )
 
     if offset ~= 0 then redirect.draw(0) end
-    return line
-  end
+    return result
+  end end
+
+  local wrapped_read = fWrapper(read)
 
   -- Run the startup program
   if parentShell == nil then
@@ -592,9 +598,9 @@ else
 
     local line
     if settings.get("shell.autocomplete") then
-      line = fCustomRead(nil, history, shell.complete)
+      line = wrapped_read(nil, history, shell.complete)
     else
-      line = fCustomRead(nil, history)
+      line = wrapped_read(nil, history)
     end
 
     if not line then break end

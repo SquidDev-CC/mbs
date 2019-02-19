@@ -43,6 +43,9 @@ function read(opts)
   check_key(opts, "complete_fg", "number") -- Foreground for completion
   check_key(opts, "complete_bg", "number") -- Background for completion
 
+  -- Highlight function: (line: string, start: number) -> (end: number, colour:colour)
+  check_key(opts, "highlight", "function")
+
   local w = term.getSize()
   local sx = term.getCursorPos()
 
@@ -117,10 +120,34 @@ function read(opts)
     local _, cy = term.getCursorPos()
     term.setCursorPos(sx, cy)
     local sReplace = (_bClear and " ") or replace_char
-    if sReplace then
-      term.write(string.rep(sReplace, math.max(#sLine - nScroll, 0)))
+
+    if opts.highlight and not _bClear then
+      -- We've a highlighting function: step through each line of input
+      local old_col = term.getTextColor()
+      local hl_pos, hl_max, hl_col = 1, #sLine, old_col
+      while hl_pos <= hl_max do
+        local next_pos, next_col = opts.highlight(sLine, hl_pos)
+        if next_pos < hl_pos then error("Highlighting function consumed no input") end
+
+        if next_pos >= nScroll + 1 then
+          if next_col ~= hl_col then term.setTextColor(next_col) hl_col = next_col end
+          if sReplace then
+            term.write(string.rep(sReplace, next_pos - math.max(nScroll + 1, hl_pos) + 1))
+          else
+            term.write(string.sub(sLine, math.max(nScroll + 1, hl_pos), next_pos))
+          end
+        end
+
+        hl_pos = next_pos + 1
+      end
+      term.setTextColor(old_col)
     else
-      term.write(string.sub(sLine, nScroll + 1))
+      -- If we've no highlighting function, we can go the "fast" path.
+      if sReplace then
+        term.write(string.rep(sReplace, math.max(#sLine - nScroll, 0)))
+      else
+        term.write(string.sub(sLine, nScroll + 1))
+      end
     end
 
     if nCompletion then
