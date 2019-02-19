@@ -65,8 +65,12 @@ return {
     end)
   end,
 
-  startup = function()
-    shell.run("shell")
+  startup = function(path)
+    local fn, err = loadfile(fs.combine(path, "bin/shell.lua"), _ENV)
+    if not fn then error(err) end
+
+    fn()
+
     shell.exit()
   end,
 }

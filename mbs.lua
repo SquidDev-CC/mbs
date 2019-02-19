@@ -8,7 +8,7 @@ local repo_url = "https://raw.githubusercontent.com/SquidDev-CC/mbs/master/"
 local function write_coloured(colour, text)
   local old = term.getTextColour()
   term.setTextColour(colour)
-  write(text)
+  io.write(text)
   term.setTextColour(old)
 end
 
@@ -16,10 +16,10 @@ end
 local commands = { "install", "modules", "module", "download" }
 local function print_usage()
   local name = fs.getName(shell.getRunningProgram()):gsub("%.lua$", "")
-  write_coloured(colours.cyan, name .. " modules  ") print("Print the status of all modules")
-  write_coloured(colours.cyan, name .. " module   ") print("Print information about a given module")
-  write_coloured(colours.cyan, name .. " install  ") print("Download all modules and create a startup file")
-  write_coloured(colours.cyan, name .. " download ") print("Download all modules WITHOUT creating a startup file")
+  write_coloured(colours.cyan, name .. " modules  ") io.write("Print the status of all modules\n")
+  write_coloured(colours.cyan, name .. " module   ") io.write("Print information about a given module\n")
+  write_coloured(colours.cyan, name .. " install  ") io.write("Download all modules and create a startup file\n")
+  write_coloured(colours.cyan, name .. " download ") io.write("Download all modules WITHOUT creating a startup file\n")
 end
 
 --- Attempt to load a module from the given path, returning the module or false
@@ -128,7 +128,7 @@ local function load_all_modules()
 end
 
 if arg.n == 0 then
-  printError("Expected some command")
+  io.stderr:write("Expected some command\n")
   print_usage()
   error()
 elseif arg[1] == "download" then
@@ -136,47 +136,39 @@ elseif arg[1] == "download" then
 elseif arg[1] == "install" then
   load_all_modules()
 
-  -- If we're on CC 1.80 then we'll create a startup directory and use that.
-  if fs.exists("rom/startup.lua") then
-    -- Move the existing startup file if required
-    if fs.exists("startup") and not fs.isDir("startup")then
-      local handle = fs.open("startup", "r")
-      local contents = handle.readAll()
-      handle.close()
-      fs.delete("startup")
+  -- Move the existing startup file. We have to read the whole thing,
+  -- as otherwise we'd end up copying inside ourselves.
+  if fs.exists("startup") and not fs.isDir("startup") then
+    write_coloured(colours.cyan, "Moving your existing startup file to startup/30_startup.lua.\n")
 
-      handle = fs.open("startup/00_init.lua", "w")
-      handle.write(contents)
-      handle.close()
-    end
-
-    -- We'll write at the last posible position
-    local handle = fs.open("startup/99_mbs.lua", "w")
-    handle.writeLine(("shell.run(%q)"):format(shell.getRunningProgram() .. " startup"))
+    local handle = fs.open("startup", "r")
+    local contents = handle.readAll()
     handle.close()
-  else
-    -- Otherwise just append to the startup file
+    fs.delete("startup")
 
-    -- A rather ugly hack to determine if we have an uncommented "mbs startup" somewhere
-    -- in the file.
-    -- Note this doesn't handle block comments, but it's good enough.
-    local contains = false
-    local body = ("shell.run(%q)"):format(shell.getRunningProgram() .. " startup")
-    if fs.exists("startup") then
-      local handle = fs.open("startup", "r")
-      contains = ("\n" .. handle.readAll() .. "\n"):find("\n" .. body .. "\n", 1, true)
-      handle.close()
-    end
-
-    -- If we've no existing "mbs startup" then append it to the end.
-    if not contains then
-      local handle = fs.open("startup", "a")
-      handle.writeLine(body)
-      handle.close()
-    end
+    handle = fs.open("startup/30_startup.lua", "w")
+    handle.write(contents)
+    handle.close()
   end
 
-  print("Please reboot to apply changes.")
+  -- Also move the startup.lua file afterwards
+  if fs.exists("startup.lua") and not fs.isDir("startup.lua") then
+    write_coloured(colours.cyan, "Moving your existing startup.lua file to startup/31_startup.lua.\n")
+    fs.move("startup.lua", "startup/31_startup.lua")
+  end
+
+  if fs.exists("startup/99_mbs.lua") then
+    write_coloured(colours.cyan, "Deleting the old startup/99_mbs.lua file. We now run before other startup files.\n")
+    fs.delete("startup/99_mbs.lua")
+  end
+
+  -- We'll run at the first possible position to ensure
+  local handle = fs.open("startup/00_mbs.lua", "w")
+  handle.writeLine(("assert(loadfile(%q, _ENV))('startup')"):format(shell.getRunningProgram()))
+  handle.close()
+
+  write_coloured(colours.green, "Installed! ")
+  io.write("Please reboot to apply changes.\n")
 elseif arg[1] == "startup" then
   -- Gather a list of all modules
   local module_dir = fs.combine(install_dir, "modules")
@@ -232,7 +224,7 @@ elseif arg[1] == "modules" then
       write_coloured(colours.red, err)
     end
 
-    print()
+    io.write("\n")
   end
 
   if not found_any then error("No modules found. Maybe try running the `install` command?", 0) end
@@ -241,31 +233,28 @@ elseif arg[1] == "module" then
   local module, err = load_module(fs.combine(install_dir, fs.combine("modules", arg[2] .. ".lua")))
   if not module then error(err, 0) end
 
-  write(module.description)
+  io.write(module.description)
   if module.enabled() then
     write_coloured(colours.green, " (enabled)")
   else
     write_coloured(colours.red, " (disabled)")
   end
-  print()
-
-  print()
+  io.write("\n\n")
 
   for _, setting in ipairs(module.settings) do
     local value = settings.get(setting.name)
     write_coloured(colours.cyan, setting.name)
-    write(" " .. setting.description .. " (")
+    io.write(" " .. setting.description .. " (")
     write_coloured(colours.yellow, textutils.serialise(value))
     if value ~= setting.default then
-      write(", default is ")
+      io.write(", default is \n")
       write_coloured(colours.yellow, textutils.serialise(setting.default))
     end
 
-    write(")")
-    print()
+    io.write(")\n")
   end
 else
-  printError("Unknown command")
+  io.stderr:write("Unknown command\n")
   print_usage()
   error()
 end

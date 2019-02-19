@@ -523,24 +523,28 @@ end
 
 local tArgs = { ... }
 if #tArgs > 0 then
-  -- "shell x y z"
-  -- Run the program specified on the commandline
+  -- "shell x y z": Run the program specified on the commandline
   shell.run(...)
+  return
+end
 
-else
-  -- "shell"
-  -- Print the header
-  local parent = term.current()
-  local redirect = scroll_window.create(parent)
+-- "shell": Run the shell REPL
+local parent = term.current()
+local redirect = scroll_window.create(parent)
 
-  term.redirect(redirect)
-  term.setCursorPos(1, 1)
-  term.setBackgroundColor(bgColour)
-  term.setTextColour(promptColour)
-  print(os.version() .. " (+MBS)")
-  term.setTextColour(textColour)
+local function get_first_startup()
+  if fs.exists("startup.lua") then return "startup.lua" end
+  if fs.isDir("startup")  then
+    local first = fs.list("startup")[1]
+    if first then return fs.combine("startup", first) end
+  end
 
-  fWrapper = function(func) return function(...)
+  return nil
+end
+
+-- Setup a custom read function, which allows scrolling within our window
+fWrapper = function(func)
+  return function(...)
     local offset = 0
     local result = nil
     local args = table.pack(...)
@@ -576,63 +580,89 @@ else
 
     if offset ~= 0 then redirect.draw(0) end
     return result
-  end end
-
-  local wrapped_read = fWrapper(read)
-
-  -- Run the startup program
-  if parentShell == nil then
-    shell.run("/rom/startup.lua")
   end
+end
 
-  local history = shell.history()
-  while not bExit do
-    local scrollback = tonumber(settings.get("mbs.shell.scroll_max", 1e3))
-    if scrollback then redirect.setMaxScrollback(scrollback) end
+local wrapped_read = fWrapper(read)
 
-    term.setBackgroundColor(bgColour)
-    term.setTextColour(promptColour)
-    if term.getCursorPos() ~= 1 then print() end
-    write(shell.dir() .. "> ")
-    term.setTextColour(textColour)
+-- Print the header
+term.redirect(redirect)
+term.setCursorPos(1, 1)
+term.setBackgroundColor(bgColour)
+term.setTextColour(promptColour)
+print(os.version() .. " (+MBS)")
+term.setTextColour(textColour)
 
-    local line
-    if settings.get("shell.autocomplete") then
-      line = wrapped_read(nil, history, shell.complete)
-    else
-      line = wrapped_read(nil, history)
-    end
+if parentShell == nil then
+  -- If we've no parent shell. run the startup script. It's pretty unlikely,
+  -- but some mad people might be using it!
+  shell.run("/rom/startup.lua")
+elseif parentShell.getRunningProgram() == get_first_startup() then
+  -- If we're currently in the first startup file, then run all the others.
+  local current = parentShell.getRunningProgram()
 
-    if not line then break end
+  -- Run /startup or /startup.lua
+  local root_startup = shell.resolveProgram("startup")
+  if root_startup and root_startup ~= current then shell.run("/" .. root_startup) end
 
-    if line:match("%S") and history[#history] ~= line then
-      -- Add item to history
-      history[#history + 1] = line
-
-      -- Remove extra items from history
-      local max = tonumber(settings.get("mbs.shell.history_max", 1e4)) or 1e4
-      while #history > max do table.remove(history, 1) end
-
-      -- Write history file
-      local history_file = settings.get("mbs.shell.history_file", ".shell_history")
-      if history_file then
-        local handle = fs.open(history_file, "w")
-        if handle then
-          for i = 1, #history do handle.writeLine(history[i]) end
-          handle.close()
-        end
+  -- Run startup/*
+  if fs.isDir("startup") then
+    for _, file in ipairs(fs.list("startup")) do
+      local sub_startup = fs.combine("startup", file)
+      if sub_startup ~= current and not fs.isDir(sub_startup) then
+        shell.run("/" .. sub_startup)
       end
     end
+  end
+end
 
-    local _, y = term.getCursorPos()
-    redirect.setCursorThreshold(y)
+local history = shell.history()
+while not bExit do
+  local scrollback = tonumber(settings.get("mbs.shell.scroll_max", 1e3))
+  if scrollback then redirect.setMaxScrollback(scrollback) end
 
-    local ok = shell.run(line)
+  term.setBackgroundColor(bgColour)
+  term.setTextColour(promptColour)
+  if term.getCursorPos() ~= 1 then print() end
+  write(shell.dir() .. "> ")
+  term.setTextColour(textColour)
 
-    term.redirect(redirect)
-    redirect.endPrivateMode(not ok)
-    redirect.draw(0)
+  local line
+  if settings.get("shell.autocomplete") then
+    line = wrapped_read(nil, history, shell.complete)
+  else
+    line = wrapped_read(nil, history)
   end
 
-  term.redirect(parent)
+  if not line then break end
+
+  if line:match("%S") and history[#history] ~= line then
+    -- Add item to history
+    history[#history + 1] = line
+
+    -- Remove extra items from history
+    local max = tonumber(settings.get("mbs.shell.history_max", 1e4)) or 1e4
+    while #history > max do table.remove(history, 1) end
+
+    -- Write history file
+    local history_file = settings.get("mbs.shell.history_file", ".shell_history")
+    if history_file then
+      local handle = fs.open(history_file, "w")
+      if handle then
+        for i = 1, #history do handle.writeLine(history[i]) end
+        handle.close()
+      end
+    end
+  end
+
+  local _, y = term.getCursorPos()
+  redirect.setCursorThreshold(y)
+
+  local ok = shell.run(line)
+
+  term.redirect(redirect)
+  redirect.endPrivateMode(not ok)
+  redirect.draw(0)
 end
+
+term.redirect(parent)

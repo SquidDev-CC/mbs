@@ -30,7 +30,7 @@ return {
     textutils.pagedPrint = function(text, free_lines)
       local mode = settings.get("mbs.pager.mode")
       if mode == "none" then
-        return print(text)
+        return io.write(text .. "\n")
       else
         return native_pprint(text, free_lines)
       end
