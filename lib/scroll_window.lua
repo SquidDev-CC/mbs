@@ -330,7 +330,7 @@ function create(original)
 
     local original = original
     local scroll_offset = scroll_offset + (offset or 0)
-    for i=1, sizeY do
+    for i = 1, sizeY do
       original.setCursorPos(1,i)
       local yOffset = scroll_offset + i
       original.blit(text[yOffset], text_colour[yOffset], back_colour[yOffset])
@@ -427,14 +427,22 @@ function create(original)
       end
     end
 
-    -- Add any new lines we might need.
-    local text_line = (" "):rep(new_x)
-    local fore_line = (cur_text_colour):rep(new_x)
-    local back_line = (cur_back_colour):rep(new_x)
-    for y = total_height + 1, new_y do
-      text[y] = text_line
-      text_colour[y] = fore_line
-      back_colour[y] = back_line
+    if new_y > sizeY then
+      -- Append any new lines we might need.
+      local text_line = (" "):rep(new_x)
+      local fore_line = (cur_text_colour):rep(new_x)
+      local back_line = (cur_back_colour):rep(new_x)
+      for y = total_height + 1, new_y do
+        text[y] = text_line
+        text_colour[y] = fore_line
+        back_colour[y] = back_line
+      end
+    elseif new_y < sizeY then
+      -- Move the cursor "up" the screen, as we're going to scroll the rest of
+      -- the terminal up.
+      -- Note, this is a little ugly (we lose the top of the screen even if we)
+      -- don't need to, but it's the best we can do for now.
+      cursor_y = cursor_y - sizeY + new_y
     end
 
     sizeX = new_x

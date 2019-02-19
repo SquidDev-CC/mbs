@@ -542,127 +542,152 @@ local function get_first_startup()
   return nil
 end
 
--- Setup a custom read function, which allows scrolling within our window
-fWrapper = function(func)
+--- Create a wrapper for various read functions, allowing the user to scroll
+-- when typing.
+local scroll_offset = nil
+fWrapper = function(fn)
   return function(...)
-    local offset = 0
-    local result = nil
-    local args = table.pack(...)
-    parallel.waitForAny(
-      function() result = func(table.unpack(args, 1, args.n)) end,
-      function()
-        while true do
-          local change = 0
-          local e, event_arg = os.pullEventRaw()
-          if e == "mouse_scroll" then
-            change = event_arg
-          elseif e == "key" and event_arg == keys.pageDown then
-            change = 10
-          elseif e == "key" and event_arg == keys.pageUp then
-            change = -10
-          elseif e == "key" or e == "paste" then
-            -- Reset offset if another key is pressed
-            change = -offset
-          elseif e == "term_resize" then
-            redirect.updateSize()
-            redirect.draw(offset, true)
-          end
+    -- Set the scroll_offset to 0 to allow scrolling
+    scroll_offset = 0
 
-          if change ~= 0 and term.current() == redirect and not redirect.isPrivateMode() then
-            offset = offset + change
-            if offset > 0 then offset = 0 end
-            if offset < -redirect.getTotalHeight() then offset = -redirect.getTotalHeight() end
-            redirect.draw(offset)
-          end
-        end
-      end
-    )
+    local ok, res = pcall(fn, ...)
 
-    if offset ~= 0 then redirect.draw(0) end
-    return result
+    -- And set to nil again to disable
+    if scroll_offset ~= 0 then redirect.draw(0) end
+    scroll_offset = nil
+
+    if not ok then error(res, 0) end
+    return res
   end
 end
 
-local wrapped_read = fWrapper(read)
+local worker = coroutine.create(function()
 
--- Print the header
-term.redirect(redirect)
-term.setCursorPos(1, 1)
-term.setBackgroundColor(bgColour)
-term.setTextColour(promptColour)
-print(os.version() .. " (+MBS)")
-term.setTextColour(textColour)
-
-if parentShell == nil then
-  -- If we've no parent shell. run the startup script. It's pretty unlikely,
-  -- but some mad people might be using it!
-  shell.run("/rom/startup.lua")
-elseif parentShell.getRunningProgram() == get_first_startup() then
-  -- If we're currently in the first startup file, then run all the others.
-  local current = parentShell.getRunningProgram()
-
-  -- Run /startup or /startup.lua
-  local root_startup = shell.resolveProgram("startup")
-  if root_startup and root_startup ~= current then shell.run("/" .. root_startup) end
-
-  -- Run startup/*
-  if fs.isDir("startup") then
-    for _, file in ipairs(fs.list("startup")) do
-      local sub_startup = fs.combine("startup", file)
-      if sub_startup ~= current and not fs.isDir(sub_startup) then
-        shell.run("/" .. sub_startup)
-      end
-    end
-  end
-end
-
-local history = shell.history()
-while not bExit do
-  local scrollback = tonumber(settings.get("mbs.shell.scroll_max", 1e3))
-  if scrollback then redirect.setMaxScrollback(scrollback) end
-
+  -- Print the header
+  term.redirect(redirect)
+  term.setCursorPos(1, 1)
   term.setBackgroundColor(bgColour)
   term.setTextColour(promptColour)
-  if term.getCursorPos() ~= 1 then print() end
-  write(shell.dir() .. "> ")
+  print(os.version() .. " (+MBS)")
   term.setTextColour(textColour)
 
-  local line
-  if settings.get("shell.autocomplete") then
-    line = wrapped_read(nil, history, shell.complete)
-  else
-    line = wrapped_read(nil, history)
-  end
+  if parentShell == nil then
+    -- If we've no parent shell. run the startup script. It's pretty unlikely,
+    -- but some mad people might be using it!
+    shell.run("/rom/startup.lua")
+  elseif parentShell.getRunningProgram() == get_first_startup() then
+    -- If we're currently in the first startup file, then run all the others.
+    local current = parentShell.getRunningProgram()
 
-  if not line then break end
+    -- Run /startup or /startup.lua
+    local root_startup = shell.resolveProgram("startup")
+    if root_startup and root_startup ~= current then shell.run("/" .. root_startup) end
 
-  if line:match("%S") and history[#history] ~= line then
-    -- Add item to history
-    history[#history + 1] = line
-
-    -- Remove extra items from history
-    local max = tonumber(settings.get("mbs.shell.history_max", 1e4)) or 1e4
-    while #history > max do table.remove(history, 1) end
-
-    -- Write history file
-    local history_file = settings.get("mbs.shell.history_file", ".shell_history")
-    if history_file then
-      local handle = fs.open(history_file, "w")
-      if handle then
-        for i = 1, #history do handle.writeLine(history[i]) end
-        handle.close()
+    -- Run startup/*
+    if fs.isDir("startup") then
+      for _, file in ipairs(fs.list("startup")) do
+        local sub_startup = fs.combine("startup", file)
+        if sub_startup ~= current and not fs.isDir(sub_startup) then
+          shell.run("/" .. sub_startup)
+        end
       end
     end
   end
 
-  local _, y = term.getCursorPos()
-  redirect.setCursorThreshold(y)
+  -- The main interaction loop
+  local history = shell.history()
+  local wrapped_read = fWrapper(read)
+  while not bExit do
+    local scrollback = tonumber(settings.get("mbs.shell.scroll_max", 1e3))
+    if scrollback then redirect.setMaxScrollback(scrollback) end
 
-  local ok = shell.run(line)
+    term.setBackgroundColor(bgColour)
+    term.setTextColour(promptColour)
+    if term.getCursorPos() ~= 1 then print() end
+    write(shell.dir() .. "> ")
+    term.setTextColour(textColour)
 
-  term.redirect(redirect)
-  redirect.endPrivateMode(not ok)
-  redirect.draw(0)
+    local line
+    if settings.get("shell.autocomplete") then
+      line = wrapped_read(nil, history, shell.complete)
+    else
+      line = wrapped_read(nil, history)
+    end
+
+    if not line then break end
+
+    if line:match("%S") and history[#history] ~= line then
+      -- Add item to history
+      history[#history + 1] = line
+
+      -- Remove extra items from history
+      local max = tonumber(settings.get("mbs.shell.history_max", 1e4)) or 1e4
+      while #history > max do table.remove(history, 1) end
+
+      -- Write history file
+      local history_file = settings.get("mbs.shell.history_file", ".shell_history")
+      if history_file then
+        local handle = fs.open(history_file, "w")
+        if handle then
+          for i = 1, #history do handle.writeLine(history[i]) end
+          handle.close()
+        end
+      end
+    end
+
+    local _, y = term.getCursorPos()
+    redirect.setCursorThreshold(y)
+
+    local ok = shell.run(line)
+
+    term.redirect(redirect)
+    redirect.endPrivateMode(not ok)
+    redirect.draw(0)
+  end
+
+  term.redirect(parent)
+end)
+
+local ok, filter = coroutine.resume(worker)
+
+-- We run the main worker inside a coroutine, catching any potential scroll
+-- events.
+while coroutine.status(worker) ~= "dead" do
+  local event = table.pack(coroutine.yield())
+  local e = event[1]
+
+  -- Run the main REPL worker
+  if filter == nil or e == filter or e == "terminate" then
+    ok, filter = coroutine.resume(worker, table.unpack(event, 1, event.n))
+  end
+
+  -- Resize the terminal if required
+  if e == "term_resize" then
+    redirect.updateSize()
+    redirect.draw(scroll_offset or 0, true)
+  end
+
+  -- If we're in some interactive function, allow scrolling the input
+  if scroll_offset then
+    local change = 0
+    if e == "mouse_scroll" then
+      change = event[2]
+    elseif e == "key" and event[2] == keys.pageDown then
+      change = 10
+    elseif e == "key" and event[2] == keys.pageUp then
+      change = -10
+    elseif e == "key" or e == "paste" then
+      -- Reset offset if another key is pressed
+      change = -scroll_offset
+    end
+
+    if change ~= 0 and term.current() == redirect and not redirect.isPrivateMode() then
+      scroll_offset = scroll_offset + change
+      if scroll_offset > 0 then scroll_offset = 0 end
+      if scroll_offset < -redirect.getTotalHeight() then scroll_offset = -redirect.getTotalHeight() end
+      redirect.draw(scroll_offset)
+    end
+  end
 end
 
-term.redirect(parent)
+if not ok then error(filter, 0) end
