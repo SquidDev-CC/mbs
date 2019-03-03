@@ -128,7 +128,7 @@ local function load_all_modules()
 end
 
 if arg.n == 0 then
-  io.stderr:write("Expected some command\n")
+  printError("Expected some command")
   print_usage()
   error()
 elseif arg[1] == "download" then
@@ -186,7 +186,7 @@ elseif arg[1] == "startup" then
     end
   end
 
-  shell.setCompletionFunction(shell.getRunningProgram(), function(shell, index, text, previous)
+  shell.setCompletionFunction(shell.getRunningProgram(), function(_, index, text, previous)
     if index == 1 then
       return complete_multi(text, commands, true)
     elseif index == 2 and previous[#previous] == "module" then
@@ -254,7 +254,7 @@ elseif arg[1] == "module" then
     io.write(")\n")
   end
 else
-  io.stderr:write("Unknown command\n")
+  printError("Unknown command")
   print_usage()
   error()
 end
