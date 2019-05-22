@@ -48,6 +48,11 @@ return {
       description = "The path from that require will use by default. Set to false to use the CraftOS default.",
       default = false,
     },
+    {
+      name = "mbs.shell.errorOnGlobalDefinitions",
+      description = "When set to true the shell will throw errors when programs attempt to define new globals.",
+      default = false,
+    },
   },
 
   enabled = function() return settings.get("mbs.shell.enabled") end,
