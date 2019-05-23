@@ -50,7 +50,7 @@ return {
     },
     {
       name = "mbs.shell.strict_globals",
-      description = "When set to true the shell will throw errors when programs attempt to define new globals.",
+      description = "When set to true the shell will throw errors when programs attempt to define new globals in their environment. If you really want globals then you should use _G instead.",
       default = false,
     },
   },
