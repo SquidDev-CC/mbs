@@ -140,7 +140,7 @@ local function run(_sCommand, ...)
     local sDir = fs.getDir(sPath)
     local tEnv = setmetatable(createShellEnv(sDir), { __index = _G })
 
-    if settings.get("mbs.shell.errorOnGlobalDefinitions", false)  then
+    if settings.get("mbs.shell.strict_globals", false)  then
       tEnv._ENV = tEnv -- bios falls over if we don't have this
       getmetatable(tEnv).__newindex = function(_, name, value)
         error("Attempt to create global " .. tostring(name) .. "\n If this is intended then you probably want to use _G." .. tostring(name), 2)

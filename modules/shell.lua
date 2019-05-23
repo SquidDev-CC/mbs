@@ -49,7 +49,7 @@ return {
       default = false,
     },
     {
-      name = "mbs.shell.errorOnGlobalDefinitions",
+      name = "mbs.shell.strict_globals",
       description = "When set to true the shell will throw errors when programs attempt to define new globals.",
       default = false,
     },
