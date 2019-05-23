@@ -140,6 +140,15 @@ local function run(_sCommand, ...)
     local sDir = fs.getDir(sPath)
     local tEnv = setmetatable(createShellEnv(sDir), { __index = _G })
 
+    if settings.get("mbs.shell.strict_globals", false)  then
+      -- load (in bios.lua) will attempt to set _ENV on our environment, which
+      -- throws an error with this protection enabled. Thus we set it here first.
+      tEnv._ENV = tEnv
+      getmetatable(tEnv).__newindex = function(_, name)
+        error("Attempt to create global " .. tostring(name) .. "\n If this is intended then you probably want to use _G." .. tostring(name), 2)
+      end
+    end
+
     local ok
     local fnFile, err = loadfile(sPath, tEnv)
     if fnFile then
