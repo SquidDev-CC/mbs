@@ -142,20 +142,9 @@ local function run(_sCommand, ...)
 
     if settings.get("mbs.shell.errorOnGlobalDefinitions", false)  then
       tEnv._ENV = tEnv -- bios falls over if we don't have this
-      local allowNextGlobal = false
-      tEnv.allowThisGlobal = function()
-        allowNextGlobal = true
-      end
       getmetatable(tEnv).__newindex = function(_, name, value)
-        if not allowNextGlobal then
-          error("Attempt to create global " .. tostring(name) .. ".\n If this is intended then call allowThisGlobal() first.", 2)
-        else
-          rawset(tEnv, name, value)
-          allowNextGlobal = false
-        end
+        error("Attempt to create global " .. tostring(name) .. "\n If this is intended then you probably want to use _G." .. tostring(name), 2)
       end
-    else
-      tEnv.allowThisGlobal = function() end
     end
 
     local ok
