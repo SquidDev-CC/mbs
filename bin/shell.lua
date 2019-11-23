@@ -542,7 +542,9 @@ local parent = term.current()
 local redirect = scroll_window.create(parent)
 
 local function get_first_startup()
-  if fs.exists("startup.lua") then return "startup.lua" end
+  if fs.exists("startup.lua") and not fs.isDir("startup.lua") then
+    return "startup.lua"
+  end
   if fs.isDir("startup")  then
     local first = fs.list("startup")[1]
     if first then return fs.combine("startup", first) end
