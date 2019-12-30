@@ -164,7 +164,8 @@ elseif arg[1] == "install" then
 
   -- We'll run at the first possible position to ensure
   local handle = fs.open("startup/00_mbs.lua", "w")
-  handle.writeLine(("assert(loadfile(%q, _ENV))('startup')"):format(shell.getRunningProgram()))
+  local current = shell.getRunningProgram()
+  handle.writeLine(("assert(loadfile(%q, _ENV))('startup', %q)"):format(current, current))
   handle.close()
 
   write_coloured(colours.green, "Installed! ")
@@ -186,7 +187,8 @@ elseif arg[1] == "startup" then
     end
   end
 
-  shell.setCompletionFunction(shell.getRunningProgram(), function(_, index, text, previous)
+  local current = arg[2] or shell.getRunningProgram()
+  shell.setCompletionFunction(current, function(_, index, text, previous)
     if index == 1 then
       return complete_multi(text, commands, true)
     elseif index == 2 and previous[#previous] == "module" then
