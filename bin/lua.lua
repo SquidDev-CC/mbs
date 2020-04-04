@@ -272,6 +272,12 @@ local history = {}
 local counter = 1
 local output = {}
 
+local packagePreloadBackup = {}
+for k, v in pairs(package.preload) do
+  packagePreloadBackup[k] = v
+end
+
+
 local environment = setmetatable({
   exit = setmetatable({}, {
     __tostring = function() return "Call exit() to exit" end,
@@ -279,6 +285,13 @@ local environment = setmetatable({
   }),
 
   _noTail = function(...) return ... end,
+
+  _resetRequires = function()
+      package.preload = {}
+      for k, v in pairs(packagePreloadBackup) do
+        package.preload[k] = v
+      end
+    end,
 
   out = output,
 }, { __index = _ENV })
