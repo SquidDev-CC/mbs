@@ -279,6 +279,11 @@ local environment = setmetatable({
   }),
 
   _noTail = function(...) return ... end,
+    
+  _requireFromDisk = function(p)
+        package.preload[p] = nil
+        return require(p)
+    end,
 
   out = output,
 }, { __index = _ENV })
