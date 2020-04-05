@@ -272,6 +272,41 @@ local history = {}
 local counter = 1
 local output = {}
 
+local autoRunEnv = setmetatable({}, { __index = _ENV })
+
+local function loadAutoRun(folderPath)
+  if fs.exists( folderPath ) and fs.isDir( folderPath ) then
+    local files = fs.list( folderPath )
+    for _, file in ipairs( files ) do
+      if string.sub( file, 1, 1 ) ~= "." then
+        local path = fs.combine(folderPath, file)
+        if not fs.isDir( path ) then
+          local func, err = loadfile(path, nil, autoRunEnv)
+          if func then
+            local ok, result
+            if settings.get("mbs.lua.traceback", true) then
+              ok, result = stack_trace.xpcall_with(func)
+            else
+              ok, result = pcall(func)
+            end
+            if ok then
+              -- merge the result into the enviroment
+              if file:sub(-4) == ".lua" then
+                    file = file:sub(1,-5)
+                end
+              autoRunEnv[file] = result
+            else
+              printError(folderPath.."/"..result)
+            end
+          else
+            printError(path..": "..err)
+          end
+        end
+      end
+    end
+  end
+end
+
 local environment = setmetatable({
   exit = setmetatable({}, {
     __tostring = function() return "Call exit() to exit" end,
@@ -281,7 +316,10 @@ local environment = setmetatable({
   _noTail = function(...) return ... end,
 
   out = output,
-}, { __index = _ENV })
+}, { __index = autoRunEnv })
+
+loadAutoRun("/rom/lua_autorun")
+loadAutoRun("/lua_autorun")
 
 local autocomplete = nil
 if not settings or settings.get("lua.autocomplete") then
