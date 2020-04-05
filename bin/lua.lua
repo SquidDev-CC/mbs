@@ -289,13 +289,7 @@ local function loadAutoRun(folderPath)
             else
               ok, result = pcall(func)
             end
-            if ok then
-              -- merge the result into the enviroment
-              if file:sub(-4) == ".lua" then
-                    file = file:sub(1,-5)
-                end
-              autoRunEnv[file] = result
-            else
+            if not ok then
               printError(folderPath.."/"..result)
             end
           else
