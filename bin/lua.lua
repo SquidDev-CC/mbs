@@ -274,29 +274,34 @@ local output = {}
 
 local autoRunEnv = setmetatable({}, { __index = _ENV })
 
+
+local function processAutoRunFile(folderPath, file)
+  if string.sub( file, 1, 1 ) ~= "." then
+    local path = fs.combine(folderPath, file)
+    if not fs.isDir( path ) then
+      local func, err = loadfile(path, nil, autoRunEnv)
+      if func then
+        local ok, result
+        if settings.get("mbs.lua.traceback", true) then
+          ok, result = stack_trace.xpcall_with(func)
+        else
+          ok, result = pcall(func)
+        end
+        if not ok then
+          printError(folderPath.."/"..result)
+        end
+      else
+        printError(path..": "..err)
+      end
+    end
+  end
+end
+
 local function loadAutoRun(folderPath)
   if fs.exists( folderPath ) and fs.isDir( folderPath ) then
     local files = fs.list( folderPath )
     for _, file in ipairs( files ) do
-      if string.sub( file, 1, 1 ) ~= "." then
-        local path = fs.combine(folderPath, file)
-        if not fs.isDir( path ) then
-          local func, err = loadfile(path, nil, autoRunEnv)
-          if func then
-            local ok, result
-            if settings.get("mbs.lua.traceback", true) then
-              ok, result = stack_trace.xpcall_with(func)
-            else
-              ok, result = pcall(func)
-            end
-            if not ok then
-              printError(folderPath.."/"..result)
-            end
-          else
-            printError(path..": "..err)
-          end
-        end
-      end
+      processAutoRunFile(folderPath, file)
     end
   end
 end
