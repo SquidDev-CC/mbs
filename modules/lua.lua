@@ -10,7 +10,7 @@ return {
 
   dependencies = {
     "bin/lua.lua",
-    "lib/stack_trace.lua"
+    "lib/stack_trace.lua",
   },
 
   -- When updating the defaults, one should also update bin/lua.lua
@@ -36,13 +36,13 @@ return {
       default = true,
     },
     {
-      name= "mbs.lua.pretty_height",
+      name = "mbs.lua.pretty_height",
       description = "The height to fit the pretty-printer output to. Set to "
         .. "false to disable, true to use the terminal height or a number for a constant height.",
       default = true,
     },
     {
-      name= "mbs.lua.highlight",
+      name = "mbs.lua.highlight",
       description = "Whether to apply syntax highlighting to the REPL's input.",
       default = true,
     },
@@ -54,5 +54,5 @@ return {
     lib_load(path, "stack_trace")
 
     shell.setAlias("lua", "/" .. fs.combine(path, "bin/lua.lua"))
-  end
+  end,
 }

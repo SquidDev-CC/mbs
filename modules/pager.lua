@@ -2,7 +2,7 @@ return {
   description = "Replaces the textutils pagers with something akin to less",
 
   dependencies = {
-    "bin/help.lua"
+    "bin/help.lua",
   },
 
   settings = {
@@ -15,7 +15,7 @@ return {
       name = "mbs.pager.mode",
       description = "The mode for the alternative pager.",
       default = "default",
-    }
+    },
   },
 
   enabled = function() return settings.get("mbs.pager.enabled") end,
@@ -44,5 +44,5 @@ return {
         return native_ptabulate(...)
       end
     end
-  end
+  end,
 }

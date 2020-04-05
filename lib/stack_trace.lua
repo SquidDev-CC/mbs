@@ -5,7 +5,7 @@ local function traceback(x)
   -- Attempt to detect error() and error("xyz", 0).
   -- This probably means they're erroring the program intentionally and so we
   -- shouldn't display anything.
-  if x == nil or (type(x) == "string" and not x:find(":%d+:")) then
+  if x == nil or type(x) == "string" and not x:find(":%d+:") then
     return x
   end
 
@@ -65,7 +65,7 @@ local function xpcall_with(fn)
     -- Find the position where the stack traceback actually starts
     local trace_starts
     for i = #trace, 1, -1 do
-      if trace[i] == "stack traceback:" then trace_starts = i; break end
+      if trace[i] == "stack traceback:" then trace_starts = i break end
     end
 
     -- If this traceback is more than 15 elements long, keep the first 9, last 5

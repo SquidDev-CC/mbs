@@ -31,7 +31,7 @@ return {
       name = "mbs.readline.complete_fg",
       description = "The foreground colour for completions.",
       default = "grey",
-    }
+    },
   },
 
   enabled = function() return settings.get("mbs.readline.enabled") end,

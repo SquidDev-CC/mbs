@@ -7,10 +7,10 @@ if multishell then
 end
 
 local bExit = false
-local sDir = (parentShell and parentShell.dir()) or ""
-local sPath = (parentShell and parentShell.path()) or ".:/rom/programs"
-local tAliases = (parentShell and parentShell.aliases()) or {}
-local tCompletionInfo = (parentShell and parentShell.getCompletionInfo()) or {}
+local sDir = parentShell and parentShell.dir() or ""
+local sPath = parentShell and parentShell.path() or ".:/rom/programs"
+local tAliases = parentShell and parentShell.aliases() or {}
+local tCompletionInfo = parentShell and parentShell.getCompletionInfo() or {}
 local tProgramStack = {}
 local history = parentShell and type(parentShell.history) == "function" and parentShell.history()
 local fWrapper = nil
@@ -39,9 +39,9 @@ local function createShellEnv(sDir)
   package.path = settings.get('mbs.shell.require_path') or
     "?;?.lua;?/init.lua;/rom/modules/main/?;/rom/modules/main/?.lua;/rom/modules/main/?/init.lua"
   if turtle then
-    package.path = package.path..";/rom/modules/turtle/?;/rom/modules/turtle/?.lua;/rom/modules/turtle/?/init.lua"
+    package.path = package.path .. ";/rom/modules/turtle/?;/rom/modules/turtle/?.lua;/rom/modules/turtle/?/init.lua"
   elseif command then
-    package.path = package.path..";/rom/modules/command/?;/rom/modules/command/?.lua;/rom/modules/command/?/init.lua"
+    package.path = package.path .. ";/rom/modules/command/?;/rom/modules/command/?.lua;/rom/modules/command/?/init.lua"
   end
   package.config = "/\n;\n?\n!\n-"
   package.preload = {}
@@ -58,7 +58,7 @@ local function createShellEnv(sDir)
       local sError = ""
       for pattern in string.gmatch(package.path, "[^;]+") do
         local sPath = string.gsub(pattern, "%?", fname)
-        if sPath:sub(1,1) ~= "/" then
+        if sPath:sub(1, 1) ~= "/" then
           sPath = fs.combine(sDir, sPath)
         end
         if fs.exists(sPath) and not fs.isDir(sPath) then
@@ -76,7 +76,7 @@ local function createShellEnv(sDir)
         end
       end
       return nil, sError
-    end
+    end,
   }
 
   local sentinel = {}
@@ -133,7 +133,7 @@ local function run(_sCommand, ...)
     if multishell then
       local sTitle = fs.getName(sPath)
       if sTitle:sub(-4) == ".lua" then
-        sTitle = sTitle:sub(1,-5)
+        sTitle = sTitle:sub(1, -5)
       end
       multishell.setTitle(multishell.getCurrent(), sTitle)
     end
@@ -173,7 +173,7 @@ local function run(_sCommand, ...)
       if #tProgramStack > 0 then
         local sTitle = fs.getName(tProgramStack[#tProgramStack])
         if sTitle:sub(-4) == ".lua" then
-          sTitle = sTitle:sub(1,-5)
+          sTitle = sTitle:sub(1, -5)
         end
         multishell.setTitle(multishell.getCurrent(), sTitle)
       else
@@ -275,7 +275,6 @@ function shell.resolveProgram(_sCommand)
   end
 
   -- If the path is a global path, use it directly
-  local sStartChar = string.sub(_sCommand, 1, 1)
   if _sCommand:find("/") or _sCommand:find("\\") then
     local sPath = shell.resolve(_sCommand)
     if fs.exists(sPath) and not fs.isDir(sPath) then
@@ -314,12 +313,12 @@ function shell.programs(_bIncludeHidden)
     sPath = shell.resolve(sPath)
     if fs.isDir(sPath) then
       local tList = fs.list(sPath)
-      for n=1,#tList do
+      for n = 1, #tList do
         local sFile = tList[n]
         if not fs.isDir(fs.combine(sPath, sFile)) and
         (_bIncludeHidden or string.sub(sFile, 1, 1) ~= ".") then
           if #sFile > 4 and sFile:sub(-4) == ".lua" then
-            sFile = sFile:sub(1,-5)
+            sFile = sFile:sub(1, -5)
           end
           tItems[sFile] = true
         end
@@ -368,7 +367,7 @@ local function completeProgram(sLine)
 
     -- Add programs from the path
     local tPrograms = shell.programs()
-    for n=1,#tPrograms do
+    for n = 1, #tPrograms do
       local sProgram = tPrograms[n]
       if #sProgram > #sLine and string.sub(sProgram, 1, #sLine) == sLine then
         local sResult = string.sub(sProgram, #sLine + 1)
@@ -410,7 +409,7 @@ function shell.complete(sLine)
         return { " " }
       else
         local tResults = completeProgram(sBit)
-        for n=1,#tResults do
+        for n = 1, #tResults do
           local sResult = tResults[n]
           local sPath = shell.resolveProgram(sBit .. sResult)
           if tCompletionInfo[sPath] then
@@ -447,7 +446,7 @@ function shell.setCompletionFunction(sProgram, fnComplete)
     error("bad argument #2 (expected function, got " .. type(fnComplete) .. ")", 2)
   end
   tCompletionInfo[sProgram] = {
-    fnComplete = fnComplete
+    fnComplete = fnComplete,
   }
 end
 

@@ -119,7 +119,7 @@ function read(opts)
 
     local _, cy = term.getCursorPos()
     term.setCursorPos(sx, cy)
-    local sReplace = (_bClear and " ") or replace_char
+    local sReplace = _bClear and " " or replace_char
 
     if opts.highlight and not _bClear then
       -- We've a highlighting function: step through each line of input
@@ -209,7 +209,7 @@ function read(opts)
   redraw()
   while true do
     local sEvent, param, param1, param2 = os.pullEvent()
-    if sEvent == "char" and (nMod == 0 or nMod == 3 or (nMod == 2 and not meta_keys:find(param, 1, true))) then
+    if sEvent == "char" and (nMod == 0 or nMod == 3 or nMod == 2 and not meta_keys:find(param, 1, true)) then
       -- Typed key
       -- Alt+X will queue a char event, so we limit ourselves to cases where
       -- no modifier is used, or Ctrl+Alt are (equivalent to AltGr), or the Alt
@@ -254,7 +254,7 @@ function read(opts)
         sLine = nil
         nPos = 0
         break
-      elseif (nMod == 0 and param == keys.left) or (nMod == 1 and param == keys.b) then
+      elseif nMod == 0 and param == keys.left or nMod == 1 and param == keys.b then
         -- Left
         if nPos > 0 then
           clear()
@@ -262,7 +262,7 @@ function read(opts)
           recomplete()
           redraw()
         end
-      elseif (nMod == 0 and param == keys.right) or (nMod == 1 and param == keys.f) then
+      elseif nMod == 0 and param == keys.right or nMod == 1 and param == keys.f then
         -- Right
         if nPos < #sLine then
           -- Move right
@@ -292,8 +292,8 @@ function read(opts)
           recomplete()
           redraw()
         end
-      elseif (nMod == 0 and (param == keys.up or param == keys.down))
-          or (nMod == 1 and (param == keys.p or param == keys.n)) then
+      elseif nMod == 0 and (param == keys.up or param == keys.down)
+          or nMod == 1 and (param == keys.p or param == keys.n) then
         -- Up or down
         if nCompletion then
           -- Cycle completions
@@ -340,8 +340,8 @@ function read(opts)
           uncomplete()
           redraw()
         end
-      elseif (nMod == 0 and param == keys.home)
-          or (nMod == 1 and param == keys.a) then
+      elseif nMod == 0 and param == keys.home
+          or nMod == 1 and param == keys.a then
         -- Home
         if nPos > 0 then
           clear()
@@ -349,8 +349,8 @@ function read(opts)
           recomplete()
           redraw()
         end
-      elseif (nMod == 0 and param == keys["end"])
-          or (nMod == 1 and param == keys.e) then
+      elseif nMod == 0 and param == keys["end"]
+          or nMod == 1 and param == keys.e then
         -- End
         if nPos < #sLine then
           clear()
@@ -371,14 +371,14 @@ function read(opts)
         nPos = math.min(#sLine, cur)
 
         -- We need the clear to remove the completion
-        clear(); recomplete(); redraw()
+        clear() recomplete() redraw()
       elseif nMod == 2 and param == keys.u then
         -- Upcase word
         if nPos < #sLine then
           local nNext = nextWord()
           sLine = nsub(1, nPos) .. nsub(nPos + 1, nNext):upper() .. nsub(nNext + 1, #sLine)
           nPos = nNext
-          clear(); recomplete(); redraw()
+          clear() recomplete() redraw()
         end
       elseif nMod == 2 and param == keys.l then
         -- Lowercase word
@@ -386,7 +386,7 @@ function read(opts)
           local nNext = nextWord()
           sLine = nsub(1, nPos) .. nsub(nPos + 1, nNext):lower() .. nsub(nNext + 1, #sLine)
           nPos = nNext
-          clear(); recomplete(); redraw()
+          clear() recomplete() redraw()
         end
       elseif nMod == 2 and param == keys.c then
         -- Capitalize word
@@ -395,7 +395,7 @@ function read(opts)
           sLine = nsub(1, nPos) .. nsub(nPos + 1, nPos + 1):upper()
                .. nsub(nPos + 2, nNext):lower() .. nsub(nNext + 1, #sLine)
           nPos = nNext
-          clear(); recomplete(); redraw()
+          clear() recomplete() redraw()
         end
 
       -- Killing text
@@ -424,7 +424,7 @@ function read(opts)
           kill(sLine:sub(1, nPos))
           sLine = sLine:sub(nPos + 1)
           nPos = 0
-          recomplete(); redraw()
+          recomplete() redraw()
         end
       elseif nMod == 1 and param == keys.k then
         -- Delete from cursor to end of line
@@ -433,7 +433,7 @@ function read(opts)
           kill(sLine:sub(nPos + 1))
           sLine = sLine:sub(1, nPos)
           nPos = #sLine
-          recomplete(); redraw()
+          recomplete() redraw()
         end
       elseif nMod == 2 and param == keys.d then
         -- Delete from cursor to end of next word
@@ -443,7 +443,7 @@ function read(opts)
               clear()
               kill(sLine:sub(nPos + 1, nNext))
               sLine = sLine:sub(1, nPos) .. sLine:sub(nNext + 1)
-              recomplete(); redraw()
+              recomplete() redraw()
             end
         end
       elseif nMod == 1 and param == keys.w then
@@ -455,7 +455,7 @@ function read(opts)
             kill(sLine:sub(nPrev + 1, nPos))
             sLine = sLine:sub(1, nPrev) .. sLine:sub(nPos + 1)
             nPos = nPrev
-            recomplete(); redraw()
+            recomplete()redraw()
           end
         end
       elseif nMod == 1 and param == keys.y then
@@ -464,7 +464,7 @@ function read(opts)
           clear()
           sLine = sLine:sub(1, nPos) .. insert .. sLine:sub(nPos + 1)
           nPos = nPos + #insert
-          recomplete(); redraw()
+          recomplete() redraw()
         end
       -- Misc
       elseif nMod == 0 and param == keys.tab then

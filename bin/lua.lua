@@ -263,7 +263,7 @@ local function pretty(t, n)
   local width, height = term.getSize()
   local fit_height = settings.get("mbs.lua.pretty_height", true)
   if type(fit_height) == "number" then height = fit_height
-  elseif fit_height == false then height = 1/0 end
+  elseif fit_height == false then height = 1 / 0 end
   return pretty_impl(t, {}, width, height - 2, "", n)
 end
 

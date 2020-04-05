@@ -58,14 +58,14 @@ function create(original)
     local lineBack = back_colour[cursor_y]
     local preStop = pos - 1
     local preStart = math.min(1, preStop)
-    local postStart = pos + string.len(writeText)
+    local postStart = pos + #writeText
     local postStop = sizeX
     local sub, rep = string.sub, string.rep
 
-    text[cursor_y] = sub(lineText, preStart, preStop)..writeText..sub(lineText, postStart, postStop)
-    text_colour[cursor_y] = sub(lineColor, preStart, preStop)..rep(cur_text_colour, #writeText)..sub(lineColor, postStart, postStop)
-    back_colour[cursor_y] = sub(lineBack, preStart, preStop)..rep(cur_back_colour, #writeText)..sub(lineBack, postStart, postStop)
-    cursor_x = pos + string.len(writeText)
+    text[cursor_y] = sub(lineText, preStart, preStop) .. writeText .. sub(lineText, postStart, postStop)
+    text_colour[cursor_y] = sub(lineColor, preStart, preStop) .. rep(cur_text_colour, #writeText) .. sub(lineColor, postStart, postStop)
+    back_colour[cursor_y] = sub(lineBack, preStart, preStop) .. rep(cur_back_colour, #writeText) .. sub(lineBack, postStart, postStop)
+    cursor_x = pos + #writeText
   end
 
   function redirect.blit(writeText, writeFore, writeBack)
@@ -104,14 +104,14 @@ function create(original)
     local lineBack = back_colour[cursor_y]
     local preStop = cursor_x - 1
     local preStart = math.min(1, preStop)
-    local postStart = cursor_x + string.len(writeText)
+    local postStart = cursor_x + #writeText
     local postStop = sizeX
     local sub = string.sub
 
-    text[cursor_y] = sub(lineText, preStart, preStop)..writeText..sub(lineText, postStart, postStop)
-    text_colour[cursor_y] = sub(lineColor, preStart, preStop)..writeFore..sub(lineColor, postStart, postStop)
-    back_colour[cursor_y] = sub(lineBack, preStart, preStop)..writeBack..sub(lineBack, postStart, postStop)
-    cursor_x = pos + string.len(writeText)
+    text[cursor_y] = sub(lineText, preStart, preStop) .. writeText .. sub(lineText, postStart, postStop)
+    text_colour[cursor_y] = sub(lineColor, preStart, preStop) .. writeFore .. sub(lineColor, postStart, postStop)
+    back_colour[cursor_y] = sub(lineBack, preStart, preStop) .. writeBack .. sub(lineBack, postStart, postStop)
+    cursor_x = pos + #writeText
   end
 
   function redirect.clear()
@@ -246,8 +246,8 @@ function create(original)
       end
     end
 
-    for i=1, sizeY do
-      target.setCursorPos(1,i)
+    for i = 1, sizeY do
+      target.setCursorPos(1, i)
       target.blit(text[i], text_colour[i], back_colour[i])
     end
 
@@ -273,15 +273,15 @@ function create(original)
         back_colour[y] = back_colour[y]:sub(1, new_x)
       elseif new_x > sizeX then
         text[y] = text[y] .. (" "):rep(new_x - sizeX)
-        text_colour[y] = text_colour[y] .. (cur_text_colour):rep(new_x - sizeX)
-        back_colour[y] = back_colour[y] .. (cur_back_colour):rep(new_x - sizeX)
+        text_colour[y] = text_colour[y] .. cur_text_colour:rep(new_x - sizeX)
+        back_colour[y] = back_colour[y] .. cur_back_colour:rep(new_x - sizeX)
       end
     end
 
     -- Add any new lines we might need.
     local text_line = (" "):rep(new_x)
-    local fore_line = (cur_text_colour):rep(new_x)
-    local back_line = (cur_back_colour):rep(new_x)
+    local fore_line = cur_text_colour:rep(new_x)
+    local back_line = cur_back_colour:rep(new_x)
     for y = sizeY + 1, new_y do
       text[y] = text_line
       text_colour[y] = fore_line
