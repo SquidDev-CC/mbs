@@ -145,7 +145,7 @@ local function run(_sCommand, ...)
       -- throws an error with this protection enabled. Thus we set it here first.
       tEnv._ENV = tEnv
       getmetatable(tEnv).__newindex = function(_, name)
-        error("Attempt to create global " .. tostring(name) .. "\n If this is intended then you probably want to use _G." .. tostring(name), 2)
+        error("Attempt to create global " .. tostring(name) .. "\n If this is intended then you probably want to use _G." .. tostring(name) .. "\nAlternativly, you might be missing a local keyword or misspelled your variable.", 2)
       end
     end
 
