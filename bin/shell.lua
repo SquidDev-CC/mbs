@@ -39,6 +39,8 @@ local function createShellEnv(sDir)
   package.path = settings.get('mbs.shell.require_path', "?;?.lua;?/init.lua;/rom/modules/main/?;/rom/modules/main/?.lua;/rom/modules/main/?/init.lua")
   if turtle then
     package.path = package.path .. ";/rom/modules/turtle/?;/rom/modules/turtle/?.lua;/rom/modules/turtle/?/init.lua"
+  elseif pocket then
+    package.path = package.path .. ";/rom/modules/pocket/?;/rom/modules/pocket/?.lua;/rom/modules/pocket/?/init.lua"
   elseif command then
     package.path = package.path .. ";/rom/modules/command/?;/rom/modules/command/?.lua;/rom/modules/command/?/init.lua"
   end
