@@ -21,26 +21,31 @@ return {
       name = "mbs.shell.enabled",
       description = "Whether the extended shell is enabled.",
       default = true,
+      type = "boolean",
     },
     {
       name = "mbs.shell.history_file",
       description = "The file to save history to. Set to false to disable.",
       default = ".shell_history",
+      type = "string",
     },
     {
       name = "mbs.shell.history_max",
       description = "The maximum size of the history file",
       default = 1e4,
+      type = "number",
     },
     {
       name = "mbs.shell.scroll_max",
       description = "The maximum size of the scrollback",
       default = 1e3,
+      type = "number",
     },
     {
       name = "mbs.shell.traceback",
       description = "Show an error traceback when a program errors",
       default = true,
+      type = "boolean",
     },
   },
 

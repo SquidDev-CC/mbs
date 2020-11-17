@@ -21,6 +21,7 @@ return {
       name = "mbs.readline.enabled",
       description = "Whether the readline module is enabled.",
       default = true,
+      type = "boolean",
     },
     {
       name = "mbs.readline.complete_bg",

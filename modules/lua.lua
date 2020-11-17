@@ -19,21 +19,25 @@ return {
       name = "mbs.lua.enabled",
       description = "Whether the extended Lua REPL is enabled.",
       default = true,
+      type = "boolean",
     },
     {
       name = "mbs.lua.history_file",
       description = "The file to save history to. Set to false to disable.",
       default = ".lua_history",
+      type = "string",
     },
     {
       name = "mbs.lua.history_max",
       description = "The maximum size of the history file",
       default = 1e4,
+      type = "number",
     },
     {
       name = "mbs.lua.traceback",
       description = "Show an error traceback when an input errors",
       default = true,
+      type = "boolean",
     },
     {
       name = "mbs.lua.pretty_height",
@@ -45,6 +49,7 @@ return {
       name = "mbs.lua.highlight",
       description = "Whether to apply syntax highlighting to the REPL's input.",
       default = true,
+      type = "boolean",
     },
   },
 

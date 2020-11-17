@@ -10,6 +10,7 @@ return {
       name = "mbs.pager.enabled",
       description = "Whether the alternative pager is enabled.",
       default = true,
+      type = "boolean",
     },
     {
       name = "mbs.pager.mode",
