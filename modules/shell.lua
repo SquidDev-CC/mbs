@@ -53,6 +53,30 @@ return {
     shell.setAlias("shell", "/" .. fs.combine(path, "bin/shell.lua"))
     shell.setAlias("clear", "/" .. fs.combine(path, "bin/clear.lua"))
 
+    local expect = require "cc.expect".expect
+    function os.run(env, path, ...)
+      expect(1, env, "table")
+      expect(2, path, "string")
+  
+      setmetatable(env, { __index = _G })
+      local func, err = loadfile(path, nil, env)
+      if not func then 
+        printError(err)
+        return false
+      end 
+
+      local ok, err
+      if settings.get("mbs.shell.traceback") then
+        local arg = table.pack(...)
+        ok, err = stack_trace.xpcall_with(function() return func(table.unpack(arg, 1, arg.n)) end)
+      else
+        ok, err = pcall(func, ...)
+      end
+
+      if not ok and err and err ~= "" then printError(err) end
+      return ok
+  end
+
     shell.setCompletionFunction(fs.combine(path, "bin/shell-wrapper.lua"), function(shell, index, text, previous)
       if index == 1 then return shell.completeProgram(text) end
     end)

@@ -13,6 +13,7 @@ local function traceback(x)
     -- The parens are important, as they prevent a tail call occuring, meaning
     -- the stack level is preserved. This ensures the code behaves identically
     -- on LuaJ and PUC Lua.
+    -- Probably not needed in our wonderful Cobalt world, but best to be safe.
     return (debug_traceback(tostring(x), 2))
   else
     local level = 3
@@ -51,7 +52,9 @@ local function trim_traceback(target, marker)
   return ttarget
 end
 
---- Run a function with
+--- Run a function with a traceback. TBH, this could probably be done much more
+-- elegantly with a separate coroutine on that, but this way we don't _need_ the
+-- debug API.
 local function xpcall_with(fn)
   -- So this is rather grim: we need to get the full traceback and current one and remove
   -- the common prefix
