@@ -155,6 +155,8 @@ function create(original)
     if bubble then return original.setCursorBlink(b) end
   end
 
+  function redirect.getCursorBlink() return cursor_blink end
+
   function redirect.getSize()
     return sizeX, sizeY
   end

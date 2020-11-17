@@ -43,16 +43,6 @@ return {
       description = "Show an error traceback when a program errors",
       default = true,
     },
-    {
-      name = "mbs.shell.require_path",
-      description = "Require will search these paths before using the CraftOS defaults. Set to nil to just use the CraftOS paths.",
-      default = nil,
-    },
-    {
-      name = "mbs.shell.strict_globals",
-      description = "When set to true the shell will throw errors when programs attempt to define new globals in their environment. If you really want globals then you should use _G instead.",
-      default = false,
-    },
   },
 
   enabled = function() return settings.get("mbs.shell.enabled") end,
@@ -65,17 +55,15 @@ return {
     shell.setAlias("shell", "/" .. fs.combine(path, "bin/shell.lua"))
     shell.setAlias("clear", "/" .. fs.combine(path, "bin/clear.lua"))
 
-    shell.setCompletionFunction(fs.combine(path, "bin/shell.lua"), function(shell, index, text, previous)
+    shell.setCompletionFunction(fs.combine(path, "bin/shell-wrapper.lua"), function(shell, index, text, previous)
       if index == 1 then return shell.completeProgram(text) end
     end)
   end,
 
   startup = function(path)
-    local fn, err = loadfile(fs.combine(path, "bin/shell.lua"), _ENV)
+    local fn, err = loadfile(fs.combine(path, "bin/shell-worker.lua"), _ENV)
     if not fn then error(err) end
 
     fn()
-
-    shell.exit()
   end,
 }

@@ -207,6 +207,11 @@ function create(original)
     cursor_blink = b
     if bubble then return original.setCursorBlink(b) end
   end
+  
+  function redirect.getCursorBlink() 
+    if delegate then return delegate.getCursorBlink() end
+    return cursor_blink 
+  end
 
   function redirect.getSize()
     if delegate then return delegate.getSize() end
