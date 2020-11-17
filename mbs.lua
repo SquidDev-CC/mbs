@@ -43,7 +43,7 @@ end
 --- Setup all modules
 local function setup_module(module)
   for _, setting in ipairs(module.settings) do
-    if settings.get(setting.name) == nil then
+    if settings.get(setting.name) == nil and setting.default ~= nil then
       settings.set(setting.name, setting.default)
     end
   end
