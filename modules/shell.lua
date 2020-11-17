@@ -45,8 +45,8 @@ return {
     },
     {
       name = "mbs.shell.require_path",
-      description = "The path from that require will use by default. Set to false to use the CraftOS default.",
-      default = false,
+      description = "Require will search these paths before using the CraftOS defaults. Set to nil to just use the CraftOS paths.",
+      default = nil,
     },
     {
       name = "mbs.shell.strict_globals",
