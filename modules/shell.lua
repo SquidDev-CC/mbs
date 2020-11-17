@@ -11,6 +11,7 @@ return {
   dependencies = {
     "bin/clear.lua",
     "bin/shell.lua",
+    "bin/shell-worker.lua",
     "lib/scroll_window.lua",
     "lib/stack_trace.lua",
   },
