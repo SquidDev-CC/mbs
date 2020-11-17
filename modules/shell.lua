@@ -11,7 +11,6 @@ return {
   dependencies = {
     "bin/clear.lua",
     "bin/shell.lua",
-    "lib/blit_window.lua",
     "lib/scroll_window.lua",
     "lib/stack_trace.lua",
   },
@@ -49,7 +48,6 @@ return {
 
   setup = function(path)
     lib_load(path, "scroll_window")
-    lib_load(path, "blit_window")
     lib_load(path, "stack_trace")
 
     shell.setAlias("shell", "/" .. fs.combine(path, "bin/shell.lua"))

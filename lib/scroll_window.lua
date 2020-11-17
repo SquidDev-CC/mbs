@@ -5,6 +5,25 @@ for i = 0, 16 do
   colour_lookup[2 ^ i] = string.format("%x", i)
 end
 
+local function copy_term(from, to, get_line, cursor_offset)
+  local _, sizeY = from.getSize()
+  for y = 1, sizeY do
+    to.setCursorPos(1, y)
+    to.blit(get_line(y))
+  end
+
+  local x, y = from.getCursorPos()
+  to.setCursorPos(x, y - cursor_offset)
+  to.setCursorBlink(from.getCursorBlink())
+  to.setTextColour(from.getTextColour())
+  to.setBackgroundColour(from.getBackgroundColour())
+
+  if from.getPaletteColour and to.getPaletteColour then
+    for i = 0, 15 do
+      to.setPaletteColour(2 ^ i, from.getPaletteColour(2 ^ i))
+    end
+  end
+end
 function create(original)
   if not original then original = term.current() end
 
@@ -323,26 +342,11 @@ function create(original)
   function redirect.draw(offset, clear)
     if delegate then return end
 
-    if original.getPaletteColour then
-      for colour, pal in pairs(palette) do
-        original.setPaletteColour(colour, pal[1], pal[2], pal[3])
-      end
-    end
-
-    original.setTextColour(2 ^ tonumber(cur_text_colour, 16))
-    original.setBackgroundColor(2 ^ tonumber(cur_back_colour, 16))
-    if clear then original.clear() end
-
-    local original = original
     local scroll_offset = scroll_offset + (offset or 0)
-    for i = 1, sizeY do
-      original.setCursorPos(1, i)
+    copy_term(redirect, original, function(i)
       local yOffset = scroll_offset + i
-      original.blit(text[yOffset], text_colour[yOffset], back_colour[yOffset])
-    end
-
-    original.setCursorPos(cursor_x, cursor_y - offset)
-    original.setCursorBlink(cursor_blink)
+      return text[yOffset], text_colour[yOffset], back_colour[yOffset]
+    end, offset)
   end
 
   function redirect.bubble(b)
@@ -365,14 +369,14 @@ function create(original)
           redirect.scroll(cursor_threshold)
         end
 
-        old_delegate.draw(redirect)
+        copy_term(old_delegate, redirect, old_delegate.getLine, 0)
       end
     end
   end
 
   function redirect.beginPrivateMode()
     if not delegate then
-      delegate = blit_window.create(original)
+      delegate = window.create(original, 1, 1, sizeX, sizeY, false)
 
       for y = 1, sizeY do
         delegate.setCursorPos(1, y)
@@ -390,6 +394,8 @@ function create(original)
           delegate.setPaletteColour(2 ^ i, palcol[1], palcol[2], palcol[3])
         end
       end
+
+      delegate.setVisible(true)
     end
 
     return delegate
@@ -409,12 +415,12 @@ function create(original)
   end
 
   function redirect.updateSize()
-    -- Update the delegate window.
-    if delegate then delegate.updateSize() end
-
     -- If nothing has changed then just skip.
     local new_x, new_y = original.getSize()
     if new_x == sizeX and new_y == sizeY then return end
+
+    -- Update the delegate window.
+    if delegate then delegate.resize(1, 1, sizeX, sizeY) end
 
     -- If we have an insufficient number of lines then add some in.
     local total_height = #text
