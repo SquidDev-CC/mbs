@@ -1,4 +1,4 @@
-local arg = table.pack(...)
+local arg = arg or table.pack(...)
 local root_dir = ".mbs"
 local rom_dir = "rom/.mbs"
 local install_dir = fs.exists(root_dir) and root_dir or rom_dir
@@ -15,7 +15,7 @@ end
 --- Print usage for this program
 local commands = { "install", "modules", "module", "download" }
 local function print_usage()
-  local name = fs.getName(shell.getRunningProgram()):gsub("%.lua$", "")
+  local name = arg[0] or fs.getName(shell.getRunningProgram()):gsub("%.lua$", "")
   write_coloured(colours.cyan, name .. " modules  ") io.write("Print the status of all modules\n")
   write_coloured(colours.cyan, name .. " module   ") io.write("Print information about a given module\n")
   write_coloured(colours.cyan, name .. " install  ") io.write("Download all modules and create a startup file\n")
