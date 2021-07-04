@@ -12,7 +12,7 @@ local function xpcall_with(fn)
     if not result[1] then break end
     if coroutine.status(co) == "dead" then return table.unpack(result, 1, result.n) end
 
-    args = coroutine.yield(result[2])
+    args = table.pack(coroutine.yield(result[2]))
   end
 
   if debug_traceback then
