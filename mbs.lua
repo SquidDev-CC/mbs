@@ -1,5 +1,5 @@
 local arg = table.pack(...)
-local root_dir = ".mbs"
+local root_dir = settings.get("mbs.install_path", ".mbs")
 local rom_dir = "rom/.mbs"
 local install_dir = fs.exists(root_dir) and root_dir or rom_dir
 local repo_url = "https://raw.githubusercontent.com/SquidDev-CC/mbs/master/"
