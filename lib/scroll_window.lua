@@ -226,10 +226,10 @@ function create(original)
     cursor_blink = b
     if bubble then return original.setCursorBlink(b) end
   end
-  
-  function redirect.getCursorBlink() 
+
+  function redirect.getCursorBlink()
     if delegate then return delegate.getCursorBlink() end
-    return cursor_blink 
+    return cursor_blink
   end
 
   function redirect.getSize()
@@ -420,7 +420,7 @@ function create(original)
     if new_x == sizeX and new_y == sizeY then return end
 
     -- Update the delegate window.
-    if delegate then delegate.resize(1, 1, sizeX, sizeY) end
+    if delegate then delegate.reposition(1, 1, sizeX, sizeY) end
 
     -- If we have an insufficient number of lines then add some in.
     local total_height = #text
