@@ -142,15 +142,15 @@ while coroutine.status(worker) ~= "dead" do
   local event = table.pack(coroutine.yield())
   local e = event[1]
 
-  -- Run the main REPL worker
-  if filter == nil or e == filter or e == "terminate" then
-    ok, filter = coroutine.resume(worker, table.unpack(event, 1, event.n))
-  end
-
   -- Resize the terminal if required
   if e == "term_resize" then
     redirect.updateSize()
     redirect.draw(scroll_offset or 0, true)
+  end
+
+  -- Run the main REPL worker
+  if filter == nil or e == filter or e == "terminate" then
+    ok, filter = coroutine.resume(worker, table.unpack(event, 1, event.n))
   end
 
   -- If we're in some interactive function, allow scrolling the input

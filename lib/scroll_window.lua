@@ -417,10 +417,11 @@ function create(original)
   function redirect.updateSize()
     -- If nothing has changed then just skip.
     local new_x, new_y = original.getSize()
+
     if new_x == sizeX and new_y == sizeY then return end
 
     -- Update the delegate window.
-    if delegate then delegate.reposition(1, 1, sizeX, sizeY) end
+    if delegate then delegate.reposition(1, 1, new_x, new_y) end
 
     -- If we have an insufficient number of lines then add some in.
     local total_height = #text
@@ -454,6 +455,7 @@ function create(original)
       -- Note, this is a little ugly (we lose the top of the screen even if we)
       -- don't need to, but it's the best we can do for now.
       cursor_y = cursor_y - sizeY + new_y
+      cursor_threshold = cursor_threshold - sizeY + new_y
     end
 
     sizeX = new_x
