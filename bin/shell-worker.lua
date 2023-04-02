@@ -56,6 +56,14 @@ local function get_first_startup()
   return nil
 end
 
+local function show_prompt()
+  term.setBackgroundColor(bgColour)
+  term.setTextColour(promptColour)
+  if term.getCursorPos() ~= 1 then print() end
+  write(shell.dir() .. "> ")
+  term.setTextColour(textColour)
+end
+
 local scroll_offset = 0
 
 local worker = coroutine.create(function()
@@ -93,11 +101,7 @@ local worker = coroutine.create(function()
     local scrollback = tonumber(settings.get("mbs.shell.scroll_max", 1e3))
     if scrollback then redirect.setMaxScrollback(scrollback) end
 
-    term.setBackgroundColor(bgColour)
-    term.setTextColour(promptColour)
-    if term.getCursorPos() ~= 1 then print() end
-    write(shell.dir() .. "> ")
-    term.setTextColour(textColour)
+    show_prompt()
 
     local line
     if settings.get("shell.autocomplete") then
@@ -141,6 +145,29 @@ local ok, filter = coroutine.resume(worker)
 while coroutine.status(worker) ~= "dead" do
   local event = table.pack(coroutine.yield())
   local e = event[1]
+
+  -- File transfer support.
+  if e == "file_transfer" then
+    -- Abandon the current prompt
+    local _, h = term.getSize()
+    local _, y = term.getCursorPos()
+    if y == h then
+      term.scroll(1)
+      term.setCursorPos(1, y)
+    else
+      term.setCursorPos(1, y + 1)
+    end
+    term.setCursorBlink(false)
+
+    -- Run the import script with the provided files
+    local ok, err = require("cc.internal.import")(event[2].getFiles())
+    if not ok and err then printError(err) end
+
+    -- And attempt to restore the prompt.
+    show_prompt()
+    term.setCursorBlink(true)
+    event = { "term_resize", n = 1 } -- Nasty hack to force read() to redraw.
+  end
 
   -- Resize the terminal if required
   if e == "term_resize" then
