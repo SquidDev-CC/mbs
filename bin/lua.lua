@@ -30,8 +30,10 @@ local tokens = {
   { "^%-%-%[%[.-%]%]", comment_colour },
   { "^%-%-.*",         comment_colour },
 
+  { [[^""]],       string_colour }, -- Empty strings
   { [[^".-[^\]"]], string_colour }, -- Complete strings
   { [[^"[^"]*"?]], string_colour }, -- Incomplete strings
+  { [[^'']],       string_colour }, -- Empty strings
   { [[^'.-[^\]']], string_colour }, -- Complete strings
   { [[^'[^"]*'?]], string_colour }, -- Incomplete strings
   { "^%[%[.-%]%]", string_colour },
