@@ -284,6 +284,9 @@ local environment = setmetatable({
   out = output,
 }, { __index = _ENV })
 
+-- Replace require/package with a new instance that loads from the current
+-- directory.
+environment.require, environment.package = require "cc.require".make(environment, shell.dir())
 
 local function process_auto_run_file(folderPath, file)
   if string.sub( file, 1, 1 ) == "." then return end
@@ -359,13 +362,11 @@ local function set_output(out, length)
 end
 
 --- Handle the result of the function
-local function handle(force_print, success, ...)
+local function handle(success, ...)
   if success then
     local len = select('#', ...)
     if len == 0 then
-      if force_print then
-        set_output(nil)
-      end
+      -- Do nothing
     elseif len == 1 then
       set_output(...)
     else
@@ -376,20 +377,6 @@ local function handle(force_print, success, ...)
   end
 end
 
-if type(package) == "table" and type(package.path) == "string" then
-  -- Attempt to determine the shell directory with leading and trailing slashes
-  local dir = shell.dir()
-  if dir:sub(1, 1) ~= "/" then dir = "/" .. dir end
-  if dir:sub(#dir, #dir) ~= "/" then dir = dir .. "/" end
-
-  -- Strip the default "current program" package path
-  local strip_path = "?;?.lua;?/init.lua;"
-  local path = package.path
-  if path:sub(1, #strip_path) == strip_path then path = path:sub(#strip_path + 1) end
-
-  -- And append the current directory to the package path
-  package.path = dir .. "?;" .. dir .. "?.lua;" .. dir .. "?/init.lua;" .. path
-end
 
 while running do
   term.setTextColour(input_colour)
@@ -428,24 +415,19 @@ while running do
       end
     end
 
-    local force_print = true
-    local func, e = load("return " .. line, "=lua", "t", environment)
-    if not func then
-      func, e = load(line, "=lua", "t", environment)
-      force_print = false
-    else
-      local wrapped_func = load("return _noTail(" .. line .. ")", "=lua", "t", environment)
-      if wrapped_func then func = wrapped_func end
+    local func, err = load(line, "=lua", "t", environment)
+    if load("return " .. line) then
+        func = load("return _noTail(" .. line .. "\n)", "=lua", "t", environment)
     end
 
     if func then
       if settings.get("mbs.lua.traceback", true) then
-        handle(force_print, stack_trace.xpcall_with(func))
+        handle(stack_trace.xpcall_with(func))
       else
-        handle(force_print, pcall(func))
+        handle(pcall(func))
       end
     else
-      printError(e)
+      printError(err)
     end
 
     counter = counter + 1
